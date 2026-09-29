@@ -19,8 +19,7 @@ import { UserManagementView } from './components/UserManagementView';
 import { HousingDossier, DossierStatus } from './types/housing';
 import { INITIAL_DOSSIERS } from './data/mockDossiers';
 import { AuthProvider, useAuth } from './context/AuthContext';
-
-const LOCAL_STORAGE_KEY = 'morocco_housing_note40_dossiers';
+import * as api from './api/client';
 
 function DesktopHousingApp() {
   const { currentUser, permissions } = useAuth();
@@ -29,21 +28,10 @@ function DesktopHousingApp() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dossiers');
   const [showUserSwitcher, setShowUserSwitcher] = useState(false);
 
-  // Load dossiers from local storage or default to initial dossiers
-  const [dossiers, setDossiers] = useState<HousingDossier[]>(() => {
-    try {
-      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-    } catch (e) {
-      console.error('Failed to load dossiers from local storage', e);
-    }
-    return INITIAL_DOSSIERS;
-  });
+  // Dossiers are loaded from the Laravel API; the backend is the source of truth.
+  const [dossiers, setDossiers] = useState<HousingDossier[]>([]);
+  const [isLoadingDossiers, setIsLoadingDossiers] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // State for modals and active selections
   const [selectedDossier, setSelectedDossier] = useState<HousingDossier | null>(null);
@@ -52,14 +40,13 @@ function DesktopHousingApp() {
   const [printDossierId, setPrintDossierId] = useState<string | undefined>(undefined);
   const [defaultDocType, setDefaultDocType] = useState<string>('demande');
 
-  // Persist to local storage
   useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dossiers));
-    } catch (e) {
-      console.error('Failed to save to local storage', e);
-    }
-  }, [dossiers]);
+    api
+      .fetchDossiers()
+      .then(setDossiers)
+      .catch((e) => setLoadError(e.message))
+      .finally(() => setIsLoadingDossiers(false));
+  }, []);
 
   const handleToggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -71,17 +58,26 @@ function DesktopHousingApp() {
     }
   };
 
-  const handleSaveDossier = (saved: HousingDossier) => {
-    setDossiers((prev) => {
-      const existsIndex = prev.findIndex((d) => d.id === saved.id);
-      if (existsIndex >= 0) {
+  const handleSaveDossier = async (saved: HousingDossier) => {
+    const existsIndex = dossiers.findIndex((d) => d.id === saved.id);
+
+    if (existsIndex < 0) {
+      try {
+        const created = await api.createDossier(saved);
+        setDossiers((prev) => [created, ...prev]);
+      } catch (e) {
+        alert('فشل إنشاء الملف في الخادم: ' + (e as Error).message);
+        return;
+      }
+    } else {
+      // No backend endpoint yet for full dossier edits (only status
+      // transitions have one) -- update the local copy only.
+      setDossiers((prev) => {
         const updated = [...prev];
         updated[existsIndex] = saved;
         return updated;
-      } else {
-        return [saved, ...prev];
-      }
-    });
+      });
+    }
 
     setEditingDossier(null);
     setActiveTab('dossiers');
@@ -96,38 +92,36 @@ function DesktopHousingApp() {
     }
   };
 
-  const handleUpdateStatus = (
+  const handleUpdateStatus = async (
     updatedDossier: HousingDossier,
     newStatus: DossierStatus,
     comment: string,
     bordereauNumber?: string
   ) => {
-    const newHistoryEntry = {
-      stage: (newStatus === 'under_review_dp'
-        ? 'audit_dp'
-        : newStatus === 'transmitted_aref'
-        ? 'transmission_aref'
-        : newStatus === 'approved'
-        ? 'final_decision'
-        : 'audit_dp') as any,
-      date: new Date().toLocaleString('ar-MA'),
-      actor: `${currentUser.fullName} (${currentUser.title})`,
-      decision:
-        newStatus === 'under_review_dp'
-          ? 'تدقيق ومطابقة الملف بالمديرية (DP)'
-          : newStatus === 'transmitted_aref'
-          ? `إحالة وقفل الملف على الأكاديمية الجهوية (جدول إرسال: ${bordereauNumber || 'BORD'})`
-          : newStatus === 'approved'
-          ? 'المصادقة ومنح الترخيص النهائي بشغل السكن'
-          : 'رفض الطلب لعدم الاستيفاء',
-      comment
-    };
-
-    const finalDossier: HousingDossier = {
-      ...updatedDossier,
-      status: newStatus,
-      auditHistory: [newHistoryEntry, ...(updatedDossier.auditHistory || [])]
-    };
+    let finalDossier: HousingDossier;
+    try {
+      const fresh = await api.updateDossierStatus(updatedDossier.id, {
+        status: newStatus,
+        comment,
+        acteur: `${currentUser.fullName} (${currentUser.title})`,
+        numero_bordereau_dp: bordereauNumber || updatedDossier.dpAudit?.bordereauNumber,
+        date_transmission_aref: updatedDossier.dpAudit?.transmissionDate,
+        numero_decision_aref: updatedDossier.arefDecision?.decisionNumber,
+        date_commission_aref: updatedDossier.arefDecision?.commissionDate,
+      });
+      finalDossier = {
+        ...fresh,
+        dpAudit: {
+          ...(updatedDossier.dpAudit || {}),
+          ...(fresh.dpAudit || {}),
+          isComplete: fresh.dpAudit?.isComplete ?? updatedDossier.dpAudit?.isComplete ?? false,
+        },
+        arefDecision: { ...(updatedDossier.arefDecision || {}), ...fresh.arefDecision },
+      };
+    } catch (e) {
+      alert('فشل تحديث حالة الملف في الخادم: ' + (e as Error).message);
+      return;
+    }
 
     setDossiers((prev) =>
       prev.map((d) => (d.id === finalDossier.id ? finalDossier : d))
@@ -144,6 +138,22 @@ function DesktopHousingApp() {
     setDefaultDocType(docType);
     setActiveTab('documents');
   };
+
+  if (isLoadingDossiers) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-slate-100 text-slate-500 text-sm">
+        جاري تحميل الملفات من الخادم...
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-slate-100 text-red-600 text-sm px-6 text-center">
+        تعذر الاتصال بالخادم: {loadError}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-100 text-slate-900 select-none">
