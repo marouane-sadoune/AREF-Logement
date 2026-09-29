@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>الموافقة على إسناد سكن وظيفي - {{ $assignment->employee->full_name_ar }}</title>
+    <title>الموافقة على إسناد سكن وظيفي - {{ $dossier->candidat->nom_ar }}</title>
     <style>
         @page {
             margin: 20px 40px;
@@ -82,20 +82,20 @@
 
     <!-- En-tête avec l'image officielle AREF Oriental -->
     <div class="header-logo">
-        <img src="data:image/png;base64,{{ base64_encode(file_get_contents(public_path('images/header.png'))) }}" alt="En-tête AREF Oriental">
+        <img src="data:image/png;base64,{{ base64_encode(file_get_contents(base_path('../public/images/header.png'))) }}" alt="En-tête AREF Oriental">
     </div>
 
     <!-- Destinataire -->
     <div class="recipient">
         مديرة الأكاديمية<br>
         إلى السيد المدير الإقليمي<br>
-        المديرية الإقليمية - {{ $assignment->employee->directionProvinciale->name_ar }}
+        المديرية الإقليمية - {{ $dossier->candidat->direction_provinciale }}
     </div>
 
     <!-- الموضوع والمراجع -->
     <div class="subject-box">
         <p><strong><u>الموضوع:</u></strong> الموافقة على إسناد سكن وظيفي.</p>
-        <p><strong><u>المرجع:</u></strong> إرساليتكم عدد {{ $assignment->incoming_mail_num ?? '24/1109' }} بتاريخ {{ $assignment->incoming_mail_date ? $assignment->incoming_mail_date->format('Y-m-d') : date('Y-m-d') }}<br>
+        <p><strong><u>المرجع:</u></strong> إرساليتكم عدد {{ $dossier->numero_bordereau_dp ?? '24/1109' }} بتاريخ {{ $dossier->date_transmission_aref ? $dossier->date_transmission_aref->format('Y-m-d') : date('Y-m-d') }}<br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;المذكرة الوزارية رقم 40 بتاريخ 10 ماي 2004</p>
     </div>
 
@@ -106,13 +106,13 @@
     <div class="content-body">
         <p>
             وبعد، فجوابا على إرساليتكم المشار إليها في المرجع أعلاه، والمتضمنة لطلب السيد(ة) 
-            <strong>{{ $assignment->employee->full_name_ar }}</strong> 
-            رقم التأجير <strong>{{ $assignment->employee->ppr }}</strong> 
+            <strong>{{ $dossier->candidat->nom_ar }}</strong> 
+            رقم التأجير <strong>{{ $dossier->candidat->ppr }}</strong> 
             في شأن الموافقة على إسناد السكن الوظيفي المخصص للإدارة التربوية بـ 
-            <strong>{{ $assignment->lodging->address ?? $assignment->lodging->etablissement_name }}</strong> 
-            التابعة للمديرية الإقليمية {{ $assignment->employee->directionProvinciale->name_ar }}، 
+            <strong>{{ $dossier->adresse_logement ?: $dossier->etablissement_cible }}</strong> 
+            التابعة للمديرية الإقليمية {{ $dossier->candidat->direction_provinciale }}، 
             وتبعا للمذكرة الوزارية المذكورة أعلاه، يشرفني إخباركم أن الأكاديمية توافق على إسناد هذا السكن للمكلف بالأمر بصفته 
-            <strong>{{ $assignment->employee->current_job }}</strong>.
+            <strong>{{ $dossier->candidat->cadre }}</strong>.
         </p>
     </div>
 
@@ -121,12 +121,12 @@
     <!-- توقيع وخاتم الأكاديمية -->
     <div class="signature-section">
         <div class="signature-box">
-            <div style="font-size: 12px; margin-bottom: 5px;">وجدة في: {{ $assignment->decision_date ? $assignment->decision_date->format('Y-m-d') : date('Y-m-d') }}</div>
+            <div style="font-size: 12px; margin-bottom: 5px;">وجدة في: {{ $dossier->date_commission_aref ? $dossier->date_commission_aref->format('Y-m-d') : date('Y-m-d') }}</div>
             <div style="font-weight: bold;">عن مديرة الأكاديمية الجهوية للتربية والتكوين</div>
             <div style="font-size: 12px;">جهة الشرق</div>
             <div style="margin-top: 15px; border: 2px dashed #b45309; padding: 15px; border-radius: 8px; color: #92400e; font-size: 11px;">
                 خاتم وتأشيرة الأكاديمية الجهوية<br>
-                <span style="font-family: monospace;">{{ $assignment->decision_number ?? 'DEC/AREF/' . date('Y') . '/049' }}</span>
+                <span style="font-family: monospace;">{{ $dossier->numero_decision_aref ?? 'DEC/AREF/' . date('Y') . '/049' }}</span>
             </div>
         </div>
         <div style="clear: both;"></div>

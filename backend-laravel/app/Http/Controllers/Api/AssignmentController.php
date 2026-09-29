@@ -3,98 +3,162 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Assignment;
-use App\Models\Employee;
-use App\Models\Lodging;
-use App\Services\Note40ScoreCalculator;
+use App\Models\AuditHistorique;
+use App\Models\BaremeDetail;
+use App\Models\DemandeLogement;
+use App\Models\DocumentFourni;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AssignmentController extends Controller
 {
-    protected Note40ScoreCalculator $calculator;
-
-    public function __construct(Note40ScoreCalculator $calculator)
-    {
-        $this->calculator = $calculator;
-    }
-
     public function index(Request $request): JsonResponse
     {
-        $query = Assignment::with(['employee.directionProvinciale', 'lodging.directionProvinciale']);
+        $query = DemandeLogement::with(['candidat', 'bareme', 'documents', 'historique']);
 
         if ($request->has('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
+            $query->where('statut_dossier', $request->status);
         }
 
-        if ($request->has('dp_id')) {
-            $query->whereHas('employee', fn($q) => $q->where('direction_provinciale_id', $request->dp_id));
+        if ($request->filled('direction_provinciale')) {
+            $query->whereHas('candidat', fn($candidateQuery) =>
+                $candidateQuery->where('direction_provinciale', $request->direction_provinciale)
+            );
         }
 
-        $assignments = $query->latest()->paginate(15);
+        $demandes = $query->orderByDesc('date_creation')->orderByDesc('id')->paginate(15);
 
-        return response()->json($assignments);
+        return response()->json($demandes);
     }
 
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
-            'lodging_id' => 'required|exists:lodgings,id',
-            'seniority_etablissement_years' => 'integer|min:0',
+            'candidat_ppr' => 'required|exists:candidats,ppr',
+            'type_logement' => 'required|in:fonction,administratif',
+            'etablissement_cible' => 'required|string|max:150',
+            'categorie_logement' => 'nullable|string|max:100',
+            'adresse_logement' => 'nullable|string',
+            'numero_logement' => 'nullable|string|max:50',
+            'statut_logement' => 'nullable|in:vacant,occupe_a_evacuer,en_maintenance',
+            'statut_dossier' => 'sometimes|in:draft,submitted_dp,under_review_dp,transmitted_aref,approved,rejected',
+            'date_creation' => 'nullable|date',
+            'reasons' => 'nullable|string',
+            'acteur' => 'nullable|string|max:100',
+            'commentaire' => 'nullable|string',
+            'pts_anciennete_generale' => 'sometimes|integer|min:0',
+            'pts_anciennete_etablissement' => 'sometimes|integer|min:0',
+            'pts_echelle' => 'sometimes|integer|min:0',
+            'pts_situation_familiale' => 'sometimes|integer|min:0',
+            'pts_enfants' => 'sometimes|integer|min:0',
+            'bonus_responsabilite' => 'sometimes|integer|min:0',
         ]);
 
-        $employee = Employee::findOrFail($validated['employee_id']);
-        $scores = $this->calculator->calculate($employee, $validated['seniority_etablissement_years'] ?? 0);
+        $scoreFields = [
+            'pts_anciennete_generale',
+            'pts_anciennete_etablissement',
+            'pts_echelle',
+            'pts_situation_familiale',
+            'pts_enfants',
+            'bonus_responsabilite',
+        ];
+        $scores = collect($scoreFields)->mapWithKeys(fn(string $field) => [
+            $field => $validated[$field] ?? 0,
+        ])->all();
+        $numeroDossier = 'DOS-' . now()->format('Y') . '-' . Str::upper(Str::random(8));
 
-        $refNumber = 'DOS-' . date('Y') . '-' . strtoupper(substr(uniqid(), -5));
+        $demande = DB::transaction(function () use ($validated, $scores, $numeroDossier) {
+            $demande = DemandeLogement::create([
+                'numero_dossier' => $numeroDossier,
+                'candidat_ppr' => $validated['candidat_ppr'],
+                'type_logement' => $validated['type_logement'],
+                'etablissement_cible' => $validated['etablissement_cible'],
+                'categorie_logement' => $validated['categorie_logement'] ?? null,
+                'adresse_logement' => $validated['adresse_logement'] ?? null,
+                'numero_logement' => $validated['numero_logement'] ?? null,
+                'statut_logement' => $validated['statut_logement'] ?? 'vacant',
+                'statut_dossier' => $validated['statut_dossier'] ?? 'draft',
+                'date_creation' => $validated['date_creation'] ?? now()->toDateString(),
+                'total_bareme' => array_sum($scores),
+                'reasons' => $validated['reasons'] ?? null,
+            ]);
 
-        $assignment = Assignment::create([
-            'reference_number' => $refNumber,
-            'employee_id' => $employee->id,
-            'lodging_id' => $validated['lodging_id'],
-            'status' => 'submitted',
-            'seniority_general_points' => $scores['seniority_general_points'],
-            'seniority_etablissement_points' => $scores['seniority_etablissement_points'],
-            'grade_points' => $scores['grade_points'],
-            'marital_points' => $scores['family_points'],
-            'total_score' => $scores['total_score'],
-        ]);
+            BaremeDetail::create([
+                'numero_dossier' => $numeroDossier,
+                ...$scores,
+                'total_points' => array_sum($scores),
+            ]);
+            DocumentFourni::create(['numero_dossier' => $numeroDossier]);
+            AuditHistorique::create([
+                'numero_dossier' => $numeroDossier,
+                'date_action' => now()->toDateTimeString(),
+                'acteur' => $validated['acteur'] ?? 'API',
+                'decision' => 'Création du dossier',
+                'commentaire' => $validated['commentaire'] ?? null,
+            ]);
+
+            return $demande;
+        });
 
         return response()->json([
             'message' => 'تم إنشاء طلب الاستفادة بنجاح',
-            'data' => $assignment->load(['employee', 'lodging'])
+            'data' => $demande->load(['candidat', 'bareme', 'documents', 'historique']),
         ], 201);
     }
 
     public function show($id): JsonResponse
     {
-        $assignment = Assignment::with(['employee.directionProvinciale', 'lodging'])->findOrFail($id);
-        return response()->json($assignment);
+        $demande = DemandeLogement::with(['candidat', 'bareme', 'documents', 'historique'])->findOrFail($id);
+
+        return response()->json($demande);
     }
 
     public function updateStatus(Request $request, $id): JsonResponse
     {
         $validated = $request->validate([
-            'status' => 'required|in:submitted,dp_validated,aref_pv_published,approved,rejected',
-            'incoming_mail_num' => 'nullable|string',
-            'incoming_mail_date' => 'nullable|date',
-            'decision_number' => 'nullable|string',
-            'decision_date' => 'nullable|date',
-            'rejection_reason' => 'nullable|string',
+            'status' => 'sometimes|in:draft,submitted_dp,under_review_dp,transmitted_aref,approved,rejected',
+            'statut_dossier' => 'sometimes|in:draft,submitted_dp,under_review_dp,transmitted_aref,approved,rejected',
+            'numero_bordereau_dp' => 'nullable|string|max:50',
+            'date_transmission_aref' => 'nullable|date',
+            'numero_decision_aref' => 'nullable|string|max:50',
+            'date_commission_aref' => 'nullable|date',
+            'reasons' => 'nullable|string',
+            'acteur' => 'nullable|string|max:100',
+            'commentaire' => 'nullable|string',
         ]);
 
-        $assignment = Assignment::findOrFail($id);
-        $assignment->update($validated);
+        $demande = DemandeLogement::findOrFail($id);
+        $status = $validated['statut_dossier'] ?? $validated['status'] ?? null;
+        $changes = collect($validated)->only([
+            'numero_bordereau_dp',
+            'date_transmission_aref',
+            'numero_decision_aref',
+            'date_commission_aref',
+            'reasons',
+        ])->all();
 
-        // إذا تمت المصادقة، تحديث وضعية السكن
-        if ($validated['status'] === 'approved') {
-            $assignment->lodging->update(['occupancy_status' => 'occupied']);
-        }
+        DB::transaction(function () use ($demande, $status, $changes, $validated) {
+            if ($status !== null) {
+                $changes['statut_dossier'] = $status;
+            }
+            $demande->update($changes);
+
+            if ($status !== null || $changes !== []) {
+                AuditHistorique::create([
+                    'numero_dossier' => $demande->numero_dossier,
+                    'date_action' => now()->toDateTimeString(),
+                    'acteur' => $validated['acteur'] ?? 'API',
+                    'decision' => $status === null ? 'Mise à jour du dossier' : 'Statut: ' . $status,
+                    'commentaire' => $validated['commentaire'] ?? null,
+                ]);
+            }
+        });
 
         return response()->json([
             'message' => 'تم تحديث وضعية الملف بنجاح',
-            'data' => $assignment
+            'data' => $demande->fresh()->load(['candidat', 'bareme', 'documents', 'historique']),
         ]);
     }
 }
