@@ -13,13 +13,12 @@ import {
   AlertTriangle,
   Users,
   Shield,
-  MapPin,
-  Server
+  MapPin
 } from 'lucide-react';
 import { HousingDossier } from '../types/housing';
 import { useAuth } from '../context/AuthContext';
 
-export type ActiveTab = 'dossiers' | 'new_dossier' | 'documents' | 'audit' | 'regulations' | 'database' | 'users' | 'laravel_backend';
+export type ActiveTab = 'dossiers' | 'new_dossier' | 'documents' | 'audit' | 'regulations' | 'database' | 'users';
 
 interface SidebarProps {
   activeTab: ActiveTab;
@@ -87,12 +86,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       sublabel: 'DB: aref_oriental',
       icon: Database
     },
-    {
-      id: 'laravel_backend' as ActiveTab,
-      label: 'الخادم الخلفي (PHP Laravel)',
-      sublabel: 'API, Models & Blade Views',
-      icon: Server
-    }
   ];
 
   return (

@@ -12,7 +12,6 @@ import { DocumentGenerator } from './components/DocumentGenerator';
 import { AuditWorkflowModal } from './components/AuditWorkflowModal';
 import { RegulationsGuide } from './components/RegulationsGuide';
 import { DatabaseBackup } from './components/DatabaseBackup';
-import { LaravelBackendViewer } from './components/LaravelBackendViewer';
 import { DossierDetailModal } from './components/DossierDetailModal';
 import { UserSwitcherModal } from './components/UserSwitcherModal';
 import { UserManagementView } from './components/UserManagementView';
@@ -297,7 +296,6 @@ function DesktopHousingApp() {
             )}
 
             {/* View: Laravel Backend Architecture & Code Hub */}
-            {activeTab === 'laravel_backend' && <LaravelBackendViewer />}
           </div>
         </main>
       </div>
