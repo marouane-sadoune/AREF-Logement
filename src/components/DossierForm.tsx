@@ -104,12 +104,12 @@ export const DossierForm: React.FC<DossierFormProps> = ({
   // Auto calculate bareme
   const bareme = calculateBareme(candidate, situationFamiliale, housingRequest);
 
-  // Auto-fill target school if empty when candidate school changes
+  // The requested housing must be located in the candidate's workplace.
   useEffect(() => {
-    if (!housingRequest.targetEtablissement && candidate.currentEtablissement) {
+    if (housingRequest.targetEtablissement !== candidate.currentEtablissement) {
       setHousingRequest(prev => ({ ...prev, targetEtablissement: candidate.currentEtablissement }));
     }
-  }, [candidate.currentEtablissement]);
+  }, [candidate.currentEtablissement, housingRequest.targetEtablissement]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,6 +117,18 @@ export const DossierForm: React.FC<DossierFormProps> = ({
     if (!candidate.fullNameAr.trim() || !candidate.cin.trim() || !candidate.ppr.trim()) {
       alert('يرجى ملء الحقول الإلزامية: الاسم الكامل، رقم البطاقة الوطنية (CIN)، ورقم التأجير (PPR)');
       setActiveStep(1);
+      return;
+    }
+
+    if (!candidate.currentEtablissement.trim()) {
+      alert('يرجى تحديد مقر العمل الحالي (المؤسسة التعليمية)');
+      setActiveStep(1);
+      return;
+    }
+
+    if (housingRequest.targetEtablissement.trim() !== candidate.currentEtablissement.trim()) {
+      alert('يجب أن يكون السكن المطلوب داخل نفس المؤسسة التي يعمل بها الموظف');
+      setActiveStep(3);
       return;
     }
 
@@ -565,11 +577,11 @@ export const DossierForm: React.FC<DossierFormProps> = ({
                 <input
                   type="text"
                   required
-                  placeholder="مثال: الثانوية التأهيلية ابن عباد"
+                  readOnly
                   value={housingRequest.targetEtablissement}
-                  onChange={(e) => setHousingRequest({ ...housingRequest, targetEtablissement: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 focus:bg-white"
+                  className="w-full p-2.5 bg-blue-50 border border-blue-200 rounded-lg text-blue-900 font-semibold cursor-not-allowed"
                 />
+                <span className="text-[10px] text-slate-500">يجب أن يطابق مقر العمل الحالي للموظف.</span>
               </div>
 
               <div>
