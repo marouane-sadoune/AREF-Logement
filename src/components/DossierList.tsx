@@ -22,7 +22,9 @@ import {
   Stamp,
   MapPin,
   ShieldAlert,
-  ArrowRight
+  ArrowRight,
+  SlidersHorizontal,
+  X
 } from 'lucide-react';
 import { HousingDossier, DossierStatus } from '../types/housing';
 import { useAuth } from '../context/AuthContext';
@@ -52,6 +54,9 @@ export const DossierList: React.FC<DossierListProps> = ({
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [dpFilter, setDpFilter] = useState<string>('all');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [refFilter, setRefFilter] = useState('');
+  const [nameFilter, setNameFilter] = useState('');
 
   // Filter dossiers by role: dp_agent sees ONLY their assigned province!
   const isDpAgent = currentUser.role === 'dp_agent';
@@ -76,11 +81,17 @@ export const DossierList: React.FC<DossierListProps> = ({
 
     const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
     const matchesType = typeFilter === 'all' || item.housingRequest.housingType === typeFilter;
-    const matchesDp = isDpAgent 
-      ? true 
+    const matchesDp = isDpAgent
+      ? true
       : (dpFilter === 'all' || item.candidate.directionProvinciale.includes(dpFilter));
 
-    return matchesSearch && matchesStatus && matchesType && matchesDp;
+    // Advanced search: دقيقة per-field criteria, combined with AND
+    const matchesRef = !refFilter || item.referenceNumber.toLowerCase().includes(refFilter.toLowerCase());
+    const matchesName = !nameFilter ||
+      item.candidate.fullNameAr.toLowerCase().includes(nameFilter.toLowerCase()) ||
+      item.candidate.fullNameFr.toLowerCase().includes(nameFilter.toLowerCase());
+
+    return matchesSearch && matchesStatus && matchesType && matchesDp && matchesRef && matchesName;
   });
 
   const getStatusBadge = (status: DossierStatus) => {
@@ -290,6 +301,20 @@ export const DossierList: React.FC<DossierListProps> = ({
             />
           </div>
 
+          {/* Advanced Search Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowAdvanced((v) => !v)}
+            className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer border ${
+              showAdvanced
+                ? 'bg-emerald-600 text-white border-emerald-600'
+                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+            }`}
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>بحث متقدم</span>
+          </button>
+
           {/* Status Filter */}
           <div className="flex flex-wrap items-center gap-2">
             <Filter className="w-4 h-4 text-slate-400 shrink-0" />
@@ -338,6 +363,40 @@ export const DossierList: React.FC<DossierListProps> = ({
             </select>
           </div>
         </div>
+
+        {/* Advanced Search Fields: dispatch number & employee name, DP/type reuse the selects above */}
+        {showAdvanced && (
+          <div className="flex flex-col md:flex-row gap-3 pt-3 border-t border-slate-100">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                placeholder="رقم الملف / الإرسال (Référence)..."
+                value={refFilter}
+                onChange={(e) => setRefFilter(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-emerald-500 focus:bg-white transition-colors"
+              />
+            </div>
+            <div className="relative flex-1">
+              <input
+                type="text"
+                placeholder="اسم الموظف (عربي أو فرنسي)..."
+                value={nameFilter}
+                onChange={(e) => setNameFilter(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-emerald-500 focus:bg-white transition-colors"
+              />
+            </div>
+            {(refFilter || nameFilter) && (
+              <button
+                type="button"
+                onClick={() => { setRefFilter(''); setNameFilter(''); }}
+                className="py-2 px-3 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0 hover:bg-rose-100 transition-colors cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>مسح</span>
+              </button>
+            )}
+          </div>
+        )}
 
         {/* 8 DPs Quick Chips (Only shown for Regional and Dev users) */}
         {!isDpAgent && (
