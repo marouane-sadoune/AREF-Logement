@@ -7,13 +7,8 @@ import {
   BookOpen, 
   Database,
   Building2,
-  CheckCircle2,
-  Clock,
-  Send,
-  AlertTriangle,
   Users,
-  Shield,
-  MapPin
+  ChevronUp
 } from 'lucide-react';
 import { HousingDossier } from '../types/housing';
 import { useAuth } from '../context/AuthContext';
@@ -25,20 +20,20 @@ interface SidebarProps {
   setActiveTab: (tab: ActiveTab) => void;
   dossiers: HousingDossier[];
   onOpenNewDossier: () => void;
+  onOpenUserSwitcher: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   setActiveTab,
   dossiers,
-  onOpenNewDossier
+  onOpenNewDossier,
+  onOpenUserSwitcher
 }) => {
   const { currentUser, permissions } = useAuth();
 
   const totalCount = dossiers.length;
   const underReviewCount = dossiers.filter(d => d.status === 'under_review_dp' || d.status === 'submitted_dp').length;
-  const transmittedCount = dossiers.filter(d => d.status === 'transmitted_aref').length;
-  const approvedCount = dossiers.filter(d => d.status === 'approved').length;
 
   const navItems = [
     {
@@ -158,54 +153,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
       </nav>
 
-      {/* Active User Status Badge at bottom */}
-      <div className="p-3 mx-3 my-2 bg-slate-950/80 rounded-xl border border-slate-800 text-[11px] space-y-1.5">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] text-slate-400">الحساب المتصل:</span>
-          <span className="text-[9px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded font-mono">
-            {currentUser.role}
-          </span>
-        </div>
-        <div className="font-bold text-slate-100 truncate">{currentUser.fullName}</div>
-        {currentUser.dpNameAr && (
-          <div className="flex items-center gap-1 text-blue-400 text-[10px] font-medium truncate">
-            <MapPin className="w-3 h-3 shrink-0" />
-            <span>{currentUser.dpNameAr}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Quick Summary Widget */}
-      <div className="p-3 mx-3 mb-3 bg-slate-950/60 rounded-lg border border-slate-800/80 text-[11px] space-y-1.5">
-        <div className="text-slate-400 font-semibold flex items-center justify-between pb-1 border-b border-slate-800">
-          <span>حالة المعالجة</span>
-          <span className="font-mono text-slate-300">{totalCount} ملفات</span>
-        </div>
-        
-        <div className="flex items-center justify-between text-amber-300">
-          <span className="flex items-center gap-1.5">
-            <Clock className="w-3 h-3" />
-            <span>تدقيق بالمديرية (DP)</span>
-          </span>
-          <span className="font-mono font-bold">{underReviewCount}</span>
-        </div>
-
-        <div className="flex items-center justify-between text-blue-300">
-          <span className="flex items-center gap-1.5">
-            <Send className="w-3 h-3" />
-            <span>محال على الأكاديمية (AREF)</span>
-          </span>
-          <span className="font-mono font-bold">{transmittedCount}</span>
-        </div>
-
-        <div className="flex items-center justify-between text-emerald-400">
-          <span className="flex items-center gap-1.5">
-            <CheckCircle2 className="w-3 h-3" />
-            <span>مصادق عليه وممنوح</span>
-          </span>
-          <span className="font-mono font-bold">{approvedCount}</span>
-        </div>
-      </div>
+      {/* Active user switcher */}
+      <button
+        type="button"
+        onClick={onOpenUserSwitcher}
+        title="تبديل المستخدم الحالي"
+        aria-label={`المستخدم الحالي ${currentUser.fullName}. اضغط لتبديل المستخدم`}
+        className="mx-3 my-2 flex w-[calc(100%-1.5rem)] items-center gap-2.5 rounded-xl border border-slate-700 bg-slate-950/80 p-2.5 text-right transition-colors hover:border-slate-600 hover:bg-slate-800 cursor-pointer"
+      >
+        <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-sm font-bold text-white ring-1 ring-white/15">
+          {currentUser.fullName.trim().charAt(0)}
+          <span className="absolute bottom-0 left-0 h-2.5 w-2.5 rounded-full border-2 border-slate-950 bg-emerald-400" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[10px] text-slate-400">الحساب المتصل</span>
+          <span className="block truncate text-[11px] font-bold text-slate-100">{currentUser.fullName}</span>
+          <span className="block truncate text-[10px] text-slate-400">{currentUser.title}</span>
+        </span>
+        <ChevronUp className="h-4 w-4 shrink-0 text-slate-400" />
+      </button>
 
       {/* Footer Info */}
       <div className="px-4 py-2.5 border-t border-slate-800 text-[10px] text-slate-400 flex items-center justify-between">

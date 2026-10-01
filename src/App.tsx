@@ -179,7 +179,7 @@ function DesktopHousingApp() {
       <DesktopWindowChrome
         isFullscreen={isFullscreen}
         onToggleFullscreen={handleToggleFullscreen}
-        onOpenUserSwitcher={() => setShowUserSwitcher(true)}
+        dossiers={dossiers}
       />
 
       {/* Main Desktop Workspace with Sidebar & Content Canvas */}
@@ -194,6 +194,7 @@ function DesktopHousingApp() {
             }
           }}
           dossiers={dossiers}
+          onOpenUserSwitcher={() => setShowUserSwitcher(true)}
           onOpenNewDossier={() => {
             setEditingDossier(null);
             setActiveTab('new_dossier');
