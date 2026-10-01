@@ -117,8 +117,8 @@ export const DossierForm: React.FC<DossierFormProps> = ({
     if (file) {
       setDocuments(prev => ({
         ...prev,
-        [key]: { ...prev[key], present: true, fileName: file.name }
-      }));
+        [key]: { ...(prev[key] as any), present: true, fileName: file.name }
+      } as RequiredDocumentsChecklist));
     }
   };
 
@@ -138,8 +138,8 @@ export const DossierForm: React.FC<DossierFormProps> = ({
           checked={documents[key].present}
           onChange={(e) => setDocuments({
             ...documents,
-            [key]: { ...documents[key], present: e.target.checked }
-          })}
+            [key]: { ...(documents[key] as any), present: e.target.checked }
+          } as RequiredDocumentsChecklist)}
           className="w-4 h-4 rounded text-emerald-600 cursor-pointer self-end"
         />
         <input
