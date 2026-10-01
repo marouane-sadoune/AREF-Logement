@@ -31,6 +31,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenUserSwitcher
 }) => {
   const { currentUser, permissions } = useAuth();
+  const avatarLabel = currentUser.role === 'dev'
+    ? 'Dev'
+    : currentUser.role === 'aref_director'
+      ? 'DA'
+      : currentUser.role === 'aref_validator'
+        ? 'VA'
+        : `DP${currentUser.dpCode?.charAt(0).toUpperCase() || ''}`;
 
   const totalCount = dossiers.length;
   const underReviewCount = dossiers.filter(d => d.status === 'under_review_dp' || d.status === 'submitted_dp').length;
@@ -162,13 +169,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
         className="mx-3 my-2 flex w-[calc(100%-1.5rem)] items-center gap-2.5 rounded-xl border border-slate-700 bg-slate-950/80 p-2.5 text-right transition-colors hover:border-slate-600 hover:bg-slate-800 cursor-pointer"
       >
         <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-sm font-bold text-white ring-1 ring-white/15">
-          {currentUser.fullName.trim().charAt(0)}
+          <span className="text-[10px]">{avatarLabel}</span>
           <span className="absolute bottom-0 left-0 h-2.5 w-2.5 rounded-full border-2 border-slate-950 bg-emerald-400" />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-[10px] text-slate-400">الحساب المتصل</span>
           <span className="block truncate text-[11px] font-bold text-slate-100">{currentUser.fullName}</span>
-          <span className="block truncate text-[10px] text-slate-400">{currentUser.title}</span>
+          <span className="block truncate text-[10px] text-slate-400">
+            {currentUser.role === 'dp_agent'
+              ? `${currentUser.dpCode || 'DP'} · ${currentUser.dpNameAr || currentUser.title}`
+              : currentUser.title}
+          </span>
         </span>
         <ChevronUp className="h-4 w-4 shrink-0 text-slate-400" />
       </button>
