@@ -6,9 +6,16 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    private function createIfMissing(string $table, \Closure $callback): void
+    {
+        if (!Schema::hasTable($table)) {
+            Schema::create($table, $callback);
+        }
+    }
+
     public function up(): void
     {
-        Schema::create('directions_provinciales', function (Blueprint $table) {
+        $this->createIfMissing('directions_provinciales', function (Blueprint $table) {
             $table->id();
             $table->string('code', 10)->unique();
             $table->string('nom_ar');
@@ -16,7 +23,7 @@ return new class extends Migration
             $table->string('chef_lieu')->nullable();
         });
 
-        Schema::create('candidats', function (Blueprint $table) {
+        $this->createIfMissing('candidats', function (Blueprint $table) {
             $table->id();
             $table->string('ppr', 20)->unique();
             $table->string('cin', 20)->nullable();
@@ -43,7 +50,7 @@ return new class extends Migration
             $table->unsignedSmallInteger('nombre_enfants')->default(0);
         });
 
-        Schema::create('demandes_logement', function (Blueprint $table) {
+        $this->createIfMissing('demandes_logement', function (Blueprint $table) {
             $table->id();
             $table->string('numero_dossier', 50)->unique();
             $table->string('candidat_ppr', 20);
@@ -64,7 +71,7 @@ return new class extends Migration
             $table->date('date_commission_aref')->nullable();
         });
 
-        Schema::create('baremes_detail', function (Blueprint $table) {
+        $this->createIfMissing('baremes_detail', function (Blueprint $table) {
             $table->id();
             $table->string('numero_dossier', 50);
             $table->foreign('numero_dossier')->references('numero_dossier')->on('demandes_logement')->cascadeOnDelete();
@@ -77,7 +84,7 @@ return new class extends Migration
             $table->unsignedInteger('total_points')->default(0);
         });
 
-        Schema::create('documents_fournis', function (Blueprint $table) {
+        $this->createIfMissing('documents_fournis', function (Blueprint $table) {
             $table->id();
             $table->string('numero_dossier', 50);
             $table->foreign('numero_dossier')->references('numero_dossier')->on('demandes_logement')->cascadeOnDelete();
@@ -90,7 +97,7 @@ return new class extends Migration
             $table->date('date_verification_dp')->nullable();
         });
 
-        Schema::create('audit_historique', function (Blueprint $table) {
+        $this->createIfMissing('audit_historique', function (Blueprint $table) {
             $table->id();
             $table->string('numero_dossier', 50);
             $table->foreign('numero_dossier')->references('numero_dossier')->on('demandes_logement')->cascadeOnDelete();
@@ -103,11 +110,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('audit_historique');
-        Schema::dropIfExists('documents_fournis');
-        Schema::dropIfExists('baremes_detail');
-        Schema::dropIfExists('demandes_logement');
-        Schema::dropIfExists('candidats');
-        Schema::dropIfExists('directions_provinciales');
+        // Existing baseline tables may predate this migration, so they must not be dropped here.
     }
 };
