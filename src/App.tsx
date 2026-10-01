@@ -57,12 +57,14 @@ function DesktopHousingApp() {
     }
   };
 
-  const handleSaveDossier = async (saved: HousingDossier) => {
+  const handleSaveDossier = async (saved: HousingDossier, docFiles?: Record<string, File | undefined>) => {
     const existsIndex = dossiers.findIndex((d) => d.id === saved.id);
+    let dossierId = saved.id;
 
     if (existsIndex < 0) {
       try {
         const created = await api.createDossier(saved);
+        dossierId = created.id;
         setDossiers((prev) => [created, ...prev]);
       } catch (e) {
         alert('فشل إنشاء الملف في الخادم: ' + (e as Error).message);
@@ -76,6 +78,23 @@ function DesktopHousingApp() {
         updated[existsIndex] = saved;
         return updated;
       });
+    }
+
+    // Upload any staged "Dossier de Demande" files (step 4) now that the
+    // dossier has a real backend id, so the DP agent can inspect them.
+    const filesToUpload = Object.entries(docFiles || {}).filter(
+      (entry): entry is [string, File] => !!entry[1]
+    );
+    if (filesToUpload.length > 0) {
+      try {
+        await Promise.all(
+          filesToUpload.map(([key, file]) => api.uploadDossierDocument(dossierId, key, file))
+        );
+        const refreshed = await api.fetchDossier(dossierId);
+        setDossiers((prev) => prev.map((d) => (d.id === dossierId ? refreshed : d)));
+      } catch (e) {
+        alert('فشل رفع بعض الوثائق: ' + (e as Error).message);
+      }
     }
 
     setEditingDossier(null);

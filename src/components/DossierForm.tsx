@@ -18,16 +18,18 @@ import {
   CandidateInfo, 
   SituationFamilialeInfo, 
   HousingRequestInfo,
+  RequiredDocumentsChecklist,
   MOROCCAN_AREFS,
   MOROCCAN_DIRECTORATES,
   MOROCCAN_GRADES
 } from '../types/housing';
 import { calculateBareme } from '../utils/bareme';
 import { useAuth } from '../context/AuthContext';
+import { getDossierDocumentUrl } from '../api/client';
 
 interface DossierFormProps {
   initialDossier?: HousingDossier | null;
-  onSave: (dossier: HousingDossier) => void;
+  onSave: (dossier: HousingDossier, docFiles?: Partial<Record<keyof RequiredDocumentsChecklist, File>>) => void;
   onCancel: () => void;
 }
 
@@ -104,6 +106,65 @@ export const DossierForm: React.FC<DossierFormProps> = ({
   // Auto calculate bareme
   const bareme = calculateBareme(candidate, situationFamiliale, housingRequest);
 
+  // Files staged for the 6 mandatory supporting documents (step 4). They are
+  // uploaded to the backend once the dossier itself has been saved -- a new
+  // dossier only gets a real id at that point -- so the DP agent can inspect
+  // them afterwards (view link next to each document).
+  const [docFiles, setDocFiles] = useState<Partial<Record<keyof RequiredDocumentsChecklist, File>>>({});
+
+  const handleDocFileChange = (key: keyof RequiredDocumentsChecklist, file: File | null) => {
+    setDocFiles(prev => ({ ...prev, [key]: file || undefined }));
+    if (file) {
+      setDocuments(prev => ({
+        ...prev,
+        [key]: { ...prev[key], present: true, fileName: file.name }
+      }));
+    }
+  };
+
+  // File input + inspect link for one of the 6 mandatory documents.
+  // Only dossiers that already have a real backend id (editing an existing
+  // dossier) can be inspected immediately; a brand new dossier is not saved
+  // to the server until the final submit, so newly staged files only show
+  // their local file name until then.
+  const renderDocFileControl = (key: keyof RequiredDocumentsChecklist) => {
+    const staged = docFiles[key];
+    const uploadedName = (documents[key] as { fileName?: string }).fileName;
+
+    return (
+      <div className="flex flex-col items-end gap-1 shrink-0 w-36">
+        <input
+          type="checkbox"
+          checked={documents[key].present}
+          onChange={(e) => setDocuments({
+            ...documents,
+            [key]: { ...documents[key], present: e.target.checked }
+          })}
+          className="w-4 h-4 rounded text-emerald-600 cursor-pointer self-end"
+        />
+        <input
+          type="file"
+          accept=".pdf,.jpg,.jpeg,.png"
+          onChange={(e) => handleDocFileChange(key, e.target.files?.[0] || null)}
+          className="w-full text-[10px] text-slate-500 cursor-pointer file:mr-1 file:px-1.5 file:py-0.5 file:rounded file:border-0 file:bg-slate-200 file:text-slate-700 file:text-[10px] file:cursor-pointer"
+        />
+        {staged && (
+          <span className="text-[10px] text-emerald-700 truncate w-full text-left" title={staged.name}>{staged.name}</span>
+        )}
+        {!staged && uploadedName && initialDossier?.id && (
+          <a
+            href={getDossierDocumentUrl(initialDossier.id, key)}
+            target="_blank"
+            rel="noreferrer"
+            className="text-[10px] text-sky-600 underline"
+          >
+            معاينة الملف
+          </a>
+        )}
+      </div>
+    );
+  };
+
   // The requested housing must be located in the candidate's workplace.
   useEffect(() => {
     if (housingRequest.targetEtablissement !== candidate.currentEtablissement) {
@@ -164,7 +225,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
       }
     };
 
-    onSave(savedDossier);
+    onSave(savedDossier, docFiles);
   };
 
   const steps = [
@@ -652,15 +713,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
                     طلب موجه إلى السيد المدير الإقليمي، يحدد فيه الموظف رغبته مع ذكر إطاره، مهامه، ومقر عمله.
                   </div>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={documents.demandeManuscrite.present}
-                  onChange={(e) => setDocuments({
-                    ...documents,
-                    demandeManuscrite: { ...documents.demandeManuscrite, present: e.target.checked }
-                  })}
-                  className="w-4 h-4 rounded text-emerald-600 cursor-pointer"
-                />
+                {renderDocFileControl('demandeManuscrite')}
               </div>
 
               {/* Doc 2 */}
@@ -671,15 +724,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
                     بطاقة التعريف الوطنية الإلكترونية للمستفيد سارية الصلاحية.
                   </div>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={documents.copieCIN.present}
-                  onChange={(e) => setDocuments({
-                    ...documents,
-                    copieCIN: { ...documents.copieCIN, present: e.target.checked }
-                  })}
-                  className="w-4 h-4 rounded text-emerald-600 cursor-pointer"
-                />
+                {renderDocFileControl('copieCIN')}
               </div>
 
               {/* Doc 3 */}
@@ -690,15 +735,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
                     تثبت وضعية الموظف الإدارية، إطاره، سلمه، وتاريخ تعيينه بمقر العمل.
                   </div>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={documents.attestationTravail.present}
-                  onChange={(e) => setDocuments({
-                    ...documents,
-                    attestationTravail: { ...documents.attestationTravail, present: e.target.checked }
-                  })}
-                  className="w-4 h-4 rounded text-emerald-600 cursor-pointer"
-                />
+                {renderDocFileControl('attestationTravail')}
               </div>
 
               {/* Doc 4 */}
@@ -709,15 +746,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
                     عقد الزواج + شهادة إدارية تثبت عمل الزوج(ة) (إن كان موظفاً) + بيان عدد الأطفال المعالين (عقود ازدياد).
                   </div>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={documents.situationFamiliale.present}
-                  onChange={(e) => setDocuments({
-                    ...documents,
-                    situationFamiliale: { ...documents.situationFamiliale, present: e.target.checked }
-                  })}
-                  className="w-4 h-4 rounded text-emerald-600 cursor-pointer"
-                />
+                {renderDocFileControl('situationFamiliale')}
               </div>
 
               {/* Doc 5 */}
@@ -728,15 +757,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
                     التزام مصحح الإمضاء يقر فيه باحترام بنود المذكرة 40 والتعهد بإفراغ السكن فور انتهاء المهام.
                   </div>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={documents.engagementHonneur.present}
-                  onChange={(e) => setDocuments({
-                    ...documents,
-                    engagementHonneur: { ...documents.engagementHonneur, present: e.target.checked }
-                  })}
-                  className="w-4 h-4 rounded text-emerald-600 cursor-pointer"
-                />
+                {renderDocFileControl('engagementHonneur')}
               </div>
 
               {/* Doc 6 */}
@@ -747,15 +768,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
                     يثبت تعيين الموظف الفعلي بالمؤسسة التعليمية التي يوجد بها السكن المطلوب.
                   </div>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={documents.pvInstallation.present}
-                  onChange={(e) => setDocuments({
-                    ...documents,
-                    pvInstallation: { ...documents.pvInstallation, present: e.target.checked }
-                  })}
-                  className="w-4 h-4 rounded text-emerald-600 cursor-pointer"
-                />
+                {renderDocFileControl('pvInstallation')}
               </div>
             </div>
           </div>

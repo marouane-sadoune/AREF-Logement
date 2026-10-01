@@ -27,6 +27,7 @@ export interface SituationFamilialeDocs {
   spouseAttestation: boolean;
   childrenCertificates: boolean;
   notes?: string;
+  fileName?: string;
 }
 
 export interface CandidateInfo {

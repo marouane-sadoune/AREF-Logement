@@ -1,4 +1,4 @@
-import { HousingDossier, DossierStatus } from '../types/housing';
+﻿import { HousingDossier, DossierStatus } from '../types/housing';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/v1';
 
@@ -31,19 +31,36 @@ const HOUSING_STATUS_FROM_API: Record<string, string> = {
   en_maintenance: 'under_maintenance',
 };
 
+// Maps each of the 6 mandatory Dossier de Demande documents (step 4 of the
+// dossier form) to the column prefix used by the backend documents_fournis
+// table (shared by the key boolean flag and the key_path file path column).
+export const SUPPORTING_DOC_KEYS: Record<string, string> = {
+  demandeManuscrite: 'demande_manuscrite',
+  copieCIN: 'copie_cin',
+  attestationTravail: 'attestation_travail',
+  situationFamiliale: 'situation_familiale',
+  engagementHonneur: 'engagement_honneur',
+  pvInstallation: 'pv_installation',
+};
+
 function inferAuditStage(decision: string, index: number): string {
-  if (index === 0 || decision.includes('Création') || decision.includes('إيداع')) return 'creation';
+  if (index === 0 || decision.includes('Creation') || decision.includes('ايداع')) return 'creation';
   if (decision.includes('تدقيق')) return 'audit_dp';
-  if (decision.includes('إحالة') || decision.includes('إرسال')) return 'transmission_aref';
+  if (decision.includes('احالة') || decision.includes('ارسال')) return 'transmission_aref';
   if (decision.includes('المصادقة') || decision.includes('الترخيص')) return 'final_decision';
   return 'audit_dp';
 }
 
-// Maps the flat Laravel `demandes_logement` JSON shape (with nested
+function fileNameFromPath(path?: string | null): string | undefined {
+  if (!path) return undefined;
+  return path.split('/').pop();
+}
+
+// Maps the flat Laravel demandes_logement JSON shape (with nested
 // candidat/bareme/documents/historique) to the richer frontend HousingDossier
-// shape. Fields the backend doesn't store yet (per-document metadata beyond a
-// present flag, dpAudit/arefDecision sub-objects) are left undefined/false —
-// callers that need them locally should merge on top of this result.
+// shape. Fields the backend does not store yet (dpAudit/arefDecision
+// sub-objects) are left undefined/false; callers that need them locally
+// should merge on top of this result.
 export function mapApiToDossier(api: any): HousingDossier {
   const c = api.candidat || {};
   const b = api.bareme || {};
@@ -91,17 +108,18 @@ export function mapApiToDossier(api: any): HousingDossier {
       reasons: api.reasons || '',
     },
     documents: {
-      demandeManuscrite: { present: !!docs.demande_manuscrite },
-      copieCIN: { present: !!docs.copie_cin },
-      attestationTravail: { present: !!docs.attestation_travail },
+      demandeManuscrite: { present: !!docs.demande_manuscrite, fileName: fileNameFromPath(docs.demande_manuscrite_path) },
+      copieCIN: { present: !!docs.copie_cin, fileName: fileNameFromPath(docs.copie_cin_path) },
+      attestationTravail: { present: !!docs.attestation_travail, fileName: fileNameFromPath(docs.attestation_travail_path) },
       situationFamiliale: {
         present: !!docs.situation_familiale,
+        fileName: fileNameFromPath(docs.situation_familiale_path),
         marriageCert: false,
         spouseAttestation: false,
         childrenCertificates: false,
       },
-      engagementHonneur: { present: !!docs.engagement_honneur },
-      pvInstallation: { present: !!docs.pv_installation },
+      engagementHonneur: { present: !!docs.engagement_honneur, fileName: fileNameFromPath(docs.engagement_honneur_path) },
+      pvInstallation: { present: !!docs.pv_installation, fileName: fileNameFromPath(docs.pv_installation_path) },
     },
     bareme: {
       seniorityGeneralPts: b.pts_anciennete_generale ?? 0,
@@ -195,6 +213,11 @@ export async function fetchDossiers(): Promise<HousingDossier[]> {
   return (body.data || []).map(mapApiToDossier);
 }
 
+export async function fetchDossier(id: string): Promise<HousingDossier> {
+  const body = await request(`/assignments/${id}`);
+  return mapApiToDossier(body);
+}
+
 export async function createDossier(dossier: HousingDossier): Promise<HousingDossier> {
   const body = await request('/assignments', {
     method: 'POST',
@@ -222,4 +245,34 @@ export async function updateDossierStatus(
     body: JSON.stringify({ ...rest, commentaire: comment }),
   });
   return mapApiToDossier(body.data);
+}
+
+// Uploads one of the 6 Dossier de Demande supporting documents so the
+// DP agent can inspect it afterwards. docKey is a frontend document field
+// name from SUPPORTING_DOC_KEYS (e.g. copieCIN).
+export async function uploadDossierDocument(
+  dossierId: string,
+  docKey: string,
+  file: File
+): Promise<{ fileName: string }> {
+  const backendKey = SUPPORTING_DOC_KEYS[docKey];
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetch(`${API_BASE}/assignments/${dossierId}/documents/${backendKey}`, {
+    method: 'POST',
+    headers: { Accept: 'application/json' },
+    body: formData,
+  });
+  const body = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(body?.message || `${res.status} ${res.statusText}`);
+  }
+  return body;
+}
+
+// URL to view/download an already-uploaded supporting document.
+export function getDossierDocumentUrl(dossierId: string, docKey: string): string {
+  const backendKey = SUPPORTING_DOC_KEYS[docKey];
+  return `${API_BASE}/assignments/${dossierId}/documents/${backendKey}`;
 }

@@ -22,4 +22,8 @@ Route::prefix('v1')->group(function () {
     Route::get('/assignments/{id}/documents/approval-letter', [DocumentController::class, 'generateApprovalLetter']);
     Route::get('/assignments/{id}/documents/pv-possession', [DocumentController::class, 'generatePvPossession']);
 
+    // رفع وتفقد الوثائق الست الإلزامية المكونة لملف الطلب (Dossier de Demande)
+    Route::post('/assignments/{id}/documents/{docKey}', [DocumentController::class, 'uploadSupportingDocument']);
+    Route::get('/assignments/{id}/documents/{docKey}', [DocumentController::class, 'downloadSupportingDocument']);
+
 });
