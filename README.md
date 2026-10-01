@@ -1,4 +1,4 @@
-# 🏛️ Aref-Oriental (G2G Digital Services Platform)
+# 🏛️ Aref-Logement (G2G Digital Services Platform)
 
 A secure institutional and administrative web application built with **Laravel**, designed to facilitate Government-to-Government (G2G) digital services, data exchange, and inter-departmental workflows for the Oriental region.
 
