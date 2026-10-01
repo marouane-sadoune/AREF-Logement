@@ -11,7 +11,8 @@ import {
   AlertCircle,
   Building,
   Calendar,
-  Sparkles
+  Sparkles,
+  Upload
 } from 'lucide-react';
 import { 
   HousingDossier, 
@@ -132,7 +133,9 @@ export const DossierForm: React.FC<DossierFormProps> = ({
     const uploadedName = (documents[key] as { fileName?: string }).fileName;
 
     return (
-      <div className="flex flex-col items-end gap-1 shrink-0 w-36">
+      <div className="flex w-full flex-col gap-2 sm:w-52">
+        <label className="flex min-h-10 items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-700">
+          <span className="text-[11px] font-medium">الوثيقة متوفرة</span>
         <input
           type="checkbox"
           checked={documents[key].present}
@@ -140,16 +143,27 @@ export const DossierForm: React.FC<DossierFormProps> = ({
             ...documents,
             [key]: { ...(documents[key] as any), present: e.target.checked }
           } as RequiredDocumentsChecklist)}
-          className="w-4 h-4 rounded text-emerald-600 cursor-pointer self-end"
+            className="h-4 w-4 shrink-0 cursor-pointer rounded accent-emerald-600"
         />
+        </label>
+        <div className="min-w-0">
         <input
           type="file"
+            id={`dossier-file-${key}`}
           accept=".pdf,.jpg,.jpeg,.png"
           onChange={(e) => handleDocFileChange(key, e.target.files?.[0] || null)}
-          className="w-full text-[10px] text-slate-500 cursor-pointer file:mr-1 file:px-1.5 file:py-0.5 file:rounded file:border-0 file:bg-slate-200 file:text-slate-700 file:text-[10px] file:cursor-pointer"
+            className="peer sr-only"
         />
+          <label
+            htmlFor={`dossier-file-${key}`}
+            className="flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 transition-colors hover:border-emerald-500 hover:bg-emerald-50 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-emerald-600"
+          >
+            <Upload className="h-4 w-4 text-emerald-700" />
+            <span>اختيار ملف</span>
+          </label>
+        </div>
         {staged && (
-          <span className="text-[10px] text-emerald-700 truncate w-full text-left" title={staged.name}>{staged.name}</span>
+          <span className="w-full truncate text-left text-[10px] text-emerald-700" title={staged.name}>{staged.name}</span>
         )}
         {!staged && uploadedName && initialDossier?.id && (
           <a
@@ -706,8 +720,8 @@ export const DossierForm: React.FC<DossierFormProps> = ({
 
             <div className="space-y-3">
               {/* Doc 1 */}
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-start justify-between gap-3 text-xs">
-                <div className="space-y-1">
+              <div className="grid grid-cols-1 items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs sm:grid-cols-[minmax(0,1fr)_13rem]">
+                <div className="min-w-0 space-y-1">
                   <div className="font-bold text-slate-900">1. الطلب الخطي (Demande manuscrite)</div>
                   <div className="text-slate-500 text-[11px]">
                     طلب موجه إلى السيد المدير الإقليمي، يحدد فيه الموظف رغبته مع ذكر إطاره، مهامه، ومقر عمله.
@@ -717,8 +731,8 @@ export const DossierForm: React.FC<DossierFormProps> = ({
               </div>
 
               {/* Doc 2 */}
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-start justify-between gap-3 text-xs">
-                <div className="space-y-1">
+              <div className="grid grid-cols-1 items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs sm:grid-cols-[minmax(0,1fr)_13rem]">
+                <div className="min-w-0 space-y-1">
                   <div className="font-bold text-slate-900">2. نسخة من بطاقة التعريف الوطنية (Copie de la CIN)</div>
                   <div className="text-slate-500 text-[11px]">
                     بطاقة التعريف الوطنية الإلكترونية للمستفيد سارية الصلاحية.
@@ -728,8 +742,8 @@ export const DossierForm: React.FC<DossierFormProps> = ({
               </div>
 
               {/* Doc 3 */}
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-start justify-between gap-3 text-xs">
-                <div className="space-y-1">
+              <div className="grid grid-cols-1 items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs sm:grid-cols-[minmax(0,1fr)_13rem]">
+                <div className="min-w-0 space-y-1">
                   <div className="font-bold text-slate-900">3. شهادة العمل (Attestation de travail) حديثة</div>
                   <div className="text-slate-500 text-[11px]">
                     تثبت وضعية الموظف الإدارية، إطاره، سلمه، وتاريخ تعيينه بمقر العمل.
@@ -739,8 +753,8 @@ export const DossierForm: React.FC<DossierFormProps> = ({
               </div>
 
               {/* Doc 4 */}
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-start justify-between gap-3 text-xs">
-                <div className="space-y-1">
+              <div className="grid grid-cols-1 items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs sm:grid-cols-[minmax(0,1fr)_13rem]">
+                <div className="min-w-0 space-y-1">
                   <div className="font-bold text-slate-900">4. الوضع العائلي (Situation Familiale)</div>
                   <div className="text-slate-500 text-[11px]">
                     عقد الزواج + شهادة إدارية تثبت عمل الزوج(ة) (إن كان موظفاً) + بيان عدد الأطفال المعالين (عقود ازدياد).
@@ -750,8 +764,8 @@ export const DossierForm: React.FC<DossierFormProps> = ({
               </div>
 
               {/* Doc 5 */}
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-start justify-between gap-3 text-xs">
-                <div className="space-y-1">
+              <div className="grid grid-cols-1 items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs sm:grid-cols-[minmax(0,1fr)_13rem]">
+                <div className="min-w-0 space-y-1">
                   <div className="font-bold text-slate-900">5. مطبوع الالتزام والتصريح بالشرف (Engagement)</div>
                   <div className="text-slate-500 text-[11px]">
                     التزام مصحح الإمضاء يقر فيه باحترام بنود المذكرة 40 والتعهد بإفراغ السكن فور انتهاء المهام.
@@ -761,8 +775,8 @@ export const DossierForm: React.FC<DossierFormProps> = ({
               </div>
 
               {/* Doc 6 */}
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-start justify-between gap-3 text-xs">
-                <div className="space-y-1">
+              <div className="grid grid-cols-1 items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs sm:grid-cols-[minmax(0,1fr)_13rem]">
+                <div className="min-w-0 space-y-1">
                   <div className="font-bold text-slate-900">6. محضر الالتحاق بالمؤسسة (PV d'installation)</div>
                   <div className="text-slate-500 text-[11px]">
                     يثبت تعيين الموظف الفعلي بالمؤسسة التعليمية التي يوجد بها السكن المطلوب.
