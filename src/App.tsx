@@ -15,12 +15,20 @@ import { DatabaseBackup } from './components/DatabaseBackup';
 import { DossierDetailModal } from './components/DossierDetailModal';
 import { UserSwitcherModal } from './components/UserSwitcherModal';
 import { UserManagementView } from './components/UserManagementView';
+import { SignInView } from './components/SignInView';
 import { HousingDossier, DossierStatus } from './types/housing';
 import { INITIAL_DOSSIERS } from './data/mockDossiers';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import * as api from './api/client';
 
-function DesktopHousingApp() {
+const normalizeDirectorate = (name: string) => name
+  .normalize('NFKC')
+  .replace(/^المديرية الإقليمية ب/u, '')
+  .replace(/\s*\([^)]*\)\s*/gu, ' ')
+  .replace(/\s+/gu, ' ')
+  .trim();
+
+function HousingWorkspace() {
   const { currentUser, permissions } = useAuth();
 
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -38,6 +46,14 @@ function DesktopHousingApp() {
   const [auditDossier, setAuditDossier] = useState<HousingDossier | null>(null);
   const [printDossierId, setPrintDossierId] = useState<string | undefined>(undefined);
   const [defaultDocType, setDefaultDocType] = useState<string>('demande');
+
+  const visibleDossiers = currentUser.role !== 'dp_agent'
+    ? dossiers
+    : currentUser.dpNameAr
+      ? dossiers.filter(dossier =>
+          normalizeDirectorate(dossier.candidate.directionProvinciale) === normalizeDirectorate(currentUser.dpNameAr!)
+        )
+      : [];
 
   useEffect(() => {
     api
@@ -179,7 +195,7 @@ function DesktopHousingApp() {
       <DesktopWindowChrome
         isFullscreen={isFullscreen}
         onToggleFullscreen={handleToggleFullscreen}
-        dossiers={dossiers}
+        dossiers={visibleDossiers}
       />
 
       {/* Main Desktop Workspace with Sidebar & Content Canvas */}
@@ -193,7 +209,7 @@ function DesktopHousingApp() {
               setEditingDossier(null);
             }
           }}
-          dossiers={dossiers}
+          dossiers={visibleDossiers}
           onOpenUserSwitcher={() => setShowUserSwitcher(true)}
           onOpenNewDossier={() => {
             setEditingDossier(null);
@@ -207,7 +223,7 @@ function DesktopHousingApp() {
             {/* View: Dossiers List */}
             {activeTab === 'dossiers' && (
               <DossierList
-                dossiers={dossiers}
+                dossiers={visibleDossiers}
                 onSelectDossier={(d) => setSelectedDossier(d)}
                 onOpenNewDossier={() => {
                   setEditingDossier(null);
@@ -238,7 +254,7 @@ function DesktopHousingApp() {
             {/* View: Official Documents Generator & Printing */}
             {activeTab === 'documents' && (
               <DocumentGenerator
-                dossiers={dossiers}
+                dossiers={visibleDossiers}
                 selectedDossierId={printDossierId}
                 defaultDocType={defaultDocType}
               />
@@ -266,7 +282,7 @@ function DesktopHousingApp() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {dossiers.map((d) => (
+                  {visibleDossiers.map((d) => (
                     <div
                       key={d.id}
                       className="bg-white p-5 rounded-xl border border-slate-200 hover:border-blue-400 transition-colors shadow-2xs space-y-3"
@@ -301,15 +317,15 @@ function DesktopHousingApp() {
             )}
 
             {/* View: User Management View (4 Roles & DPs) */}
-            {activeTab === 'users' && <UserManagementView />}
+            {activeTab === 'users' && permissions.canManageUsers && <UserManagementView />}
 
             {/* View: Regulations & Circular 40 Guide */}
             {activeTab === 'regulations' && <RegulationsGuide />}
 
             {/* View: Database & Backup */}
-            {activeTab === 'database' && (
+            {activeTab === 'database' && permissions.canAccessDatabaseSettings && (
               <DatabaseBackup
-                dossiers={dossiers}
+                dossiers={visibleDossiers}
                 onImportDossiers={(newOnes) => setDossiers(newOnes)}
                 onResetDossiers={() => setDossiers(INITIAL_DOSSIERS)}
               />
@@ -363,6 +379,16 @@ function DesktopHousingApp() {
       />
     </div>
   );
+}
+
+function DesktopHousingApp() {
+  const { isAuthenticated, signIn } = useAuth();
+
+  if (!isAuthenticated) {
+    return <SignInView onSignIn={signIn} />;
+  }
+
+  return <HousingWorkspace />;
 }
 
 export default function App() {

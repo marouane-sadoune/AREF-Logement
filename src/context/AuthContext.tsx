@@ -5,6 +5,9 @@ interface AuthContextType {
   currentUser: UserAccount;
   users: UserAccount[];
   permissions: RolePermissions;
+  isAuthenticated: boolean;
+  signIn: (username: string, password: string) => boolean;
+  signOut: () => void;
   switchUser: (userId: string) => void;
   addUser: (user: Omit<UserAccount, 'id'>) => void;
   updateUser: (user: UserAccount) => void;
@@ -14,7 +17,8 @@ interface AuthContextType {
 }
 
 const USERS_STORAGE_KEY = 'aref_oriental_users';
-const CURRENT_USER_ID_KEY = 'aref_oriental_current_user_id';
+const AUTH_SESSION_KEY = 'aref_oriental_auth_user_id';
+const PROTOTYPE_PASSWORD = 'aref2026';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -35,18 +39,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return INITIAL_USERS;
   });
 
-  // Current active user ID
+  // A persisted prototype session keeps the user signed in across refreshes.
   const [currentUserId, setCurrentUserId] = useState<string>(() => {
     try {
-      const stored = localStorage.getItem(CURRENT_USER_ID_KEY);
-      if (stored && INITIAL_USERS.some(u => u.id === stored)) {
+      const stored = localStorage.getItem(AUTH_SESSION_KEY);
+      if (stored && users.some(u => u.id === stored && u.isActive)) {
         return stored;
       }
     } catch (e) {
-      console.error('Failed to load current user ID', e);
+      console.error('Failed to load prototype auth session', e);
     }
-    // Default to dev admin or aref_director
-    return INITIAL_USERS[0].id;
+    return '';
   });
 
   // Persist users
@@ -61,18 +64,41 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Persist current user ID
   useEffect(() => {
     try {
-      localStorage.setItem(CURRENT_USER_ID_KEY, currentUserId);
+      if (currentUserId) {
+        localStorage.setItem(AUTH_SESSION_KEY, currentUserId);
+      } else {
+        localStorage.removeItem(AUTH_SESSION_KEY);
+      }
     } catch (e) {
-      console.error('Failed to persist current user ID', e);
+      console.error('Failed to persist prototype auth session', e);
     }
   }, [currentUserId]);
 
   const currentUser = users.find(u => u.id === currentUserId) || users[0] || INITIAL_USERS[0];
   const permissions = getRolePermissions(currentUser.role);
+  const isAuthenticated = Boolean(currentUserId && users.some(u => u.id === currentUserId && u.isActive));
+
+  const signIn = (username: string, password: string): boolean => {
+    const normalizedUsername = username.trim().toLowerCase();
+    const target = users.find(user => user.username.toLowerCase() === normalizedUsername);
+
+    if (!target || !target.isActive || password !== PROTOTYPE_PASSWORD) {
+      return false;
+    }
+
+    setCurrentUserId(target.id);
+    setUsers(prev => prev.map(user => user.id === target.id
+      ? { ...user, lastLogin: new Date().toLocaleString('ar-MA', { dateStyle: 'short', timeStyle: 'short' }) }
+      : user
+    ));
+    return true;
+  };
+
+  const signOut = () => setCurrentUserId('');
 
   const switchUser = (userId: string) => {
     const target = users.find(u => u.id === userId);
-    if (target) {
+    if (target?.isActive) {
       setCurrentUserId(userId);
       // update last login
       const updated = users.map(u => 
@@ -130,6 +156,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         currentUser,
         users,
         permissions,
+        isAuthenticated,
+        signIn,
+        signOut,
         switchUser,
         addUser,
         updateUser,

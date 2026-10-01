@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   FolderKanban, 
   FilePlus, 
@@ -8,7 +8,13 @@ import {
   Database,
   Building2,
   Users,
-  ChevronUp
+  ChevronDown,
+  ChevronUp,
+  Globe2,
+  LifeBuoy,
+  LogOut,
+  Settings,
+  UserRound
 } from 'lucide-react';
 import { HousingDossier } from '../types/housing';
 import { useAuth } from '../context/AuthContext';
@@ -30,7 +36,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenNewDossier,
   onOpenUserSwitcher
 }) => {
-  const { currentUser, permissions } = useAuth();
+  const { currentUser, permissions, signOut } = useAuth();
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const avatarLabel = currentUser.role === 'dev'
     ? 'Dev'
     : currentUser.role === 'aref_director'
@@ -41,6 +49,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const totalCount = dossiers.length;
   const underReviewCount = dossiers.filter(d => d.status === 'under_review_dp' || d.status === 'submitted_dp').length;
+
+  useEffect(() => {
+    if (!isUserMenuOpen) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!userMenuRef.current?.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsUserMenuOpen(false);
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isUserMenuOpen]);
 
   const navItems = [
     {
@@ -70,24 +98,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: GitFork,
       badge: underReviewCount > 0 ? underReviewCount : undefined
     },
-    {
+    ...(permissions.canManageUsers ? [{
       id: 'users' as ActiveTab,
       label: 'المستخدمون والأدوار الأربعة',
       sublabel: 'DP / AREF / Director / Dev',
       icon: Users
-    },
+    }] : []),
     {
       id: 'regulations' as ActiveTab,
       label: 'دليل المذكرة الوزارية 40',
       sublabel: 'Cadre Juridique & Barème',
       icon: BookOpen
     },
-    {
+    ...(permissions.canAccessDatabaseSettings ? [{
       id: 'database' as ActiveTab,
       label: 'قاعدة البيانات (MySQL / phpMyAdmin)',
       sublabel: 'DB: aref_oriental',
       icon: Database
-    },
+    }] : []),
   ];
 
   return (
@@ -160,29 +188,103 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
       </nav>
 
-      {/* Active user switcher */}
-      <button
-        type="button"
-        onClick={onOpenUserSwitcher}
-        title="تبديل المستخدم الحالي"
-        aria-label={`المستخدم الحالي ${currentUser.fullName}. اضغط لتبديل المستخدم`}
-        className="mx-3 my-2 flex w-[calc(100%-1.5rem)] items-center gap-2.5 rounded-xl border border-slate-700 bg-slate-950/80 p-2.5 text-right transition-colors hover:border-slate-600 hover:bg-slate-800 cursor-pointer"
-      >
-        <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-sm font-bold text-white ring-1 ring-white/15">
-          <span className="text-[10px]">{avatarLabel}</span>
-          <span className="absolute bottom-0 left-0 h-2.5 w-2.5 rounded-full border-2 border-slate-950 bg-emerald-400" />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-[10px] text-slate-400">الحساب المتصل</span>
-          <span className="block truncate text-[11px] font-bold text-slate-100">{currentUser.fullName}</span>
-          <span className="block truncate text-[10px] text-slate-400">
-            {currentUser.role === 'dp_agent'
-              ? `${currentUser.dpCode || 'DP'} · ${currentUser.dpNameAr || currentUser.title}`
-              : currentUser.title}
+      {/* Current account menu opens upward from the sidebar footer */}
+      <div ref={userMenuRef} className="relative mx-3 my-2">
+        {isUserMenuOpen && (
+          <div
+            id="sidebar-user-menu"
+            className="absolute bottom-full right-0 z-50 mb-2 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-800 shadow-xl"
+            dir="rtl"
+          >
+            <div className="border-b border-slate-200 px-4 py-3">
+              <div className="truncate text-xs font-bold text-slate-900">{currentUser.fullName}</div>
+              <div className="mt-0.5 truncate text-[11px] text-slate-500" dir="ltr">{currentUser.email}</div>
+            </div>
+            <div className="p-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsUserMenuOpen(false);
+                  onOpenUserSwitcher();
+                }}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-right text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100"
+              >
+                <UserRound className="h-4 w-4 text-slate-500" />
+                <span>تبديل الحساب</span>
+              </button>
+              {permissions.canManageUsers && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    setActiveTab('users');
+                  }}
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-right text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100"
+                >
+                  <Settings className="h-4 w-4 text-slate-500" />
+                  <span>إدارة المستخدمين</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsUserMenuOpen(false);
+                  setActiveTab('regulations');
+                }}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-right text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100"
+              >
+                <LifeBuoy className="h-4 w-4 text-slate-500" />
+                <span>الدليل والمساعدة</span>
+              </button>
+              <div className="flex items-center justify-between rounded-lg px-3 py-2.5 text-xs text-slate-600">
+                <span className="flex items-center gap-3">
+                  <Globe2 className="h-4 w-4 text-slate-500" />
+                  <span>اللغة</span>
+                </span>
+                <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold">العربية</span>
+              </div>
+            </div>
+            <div className="border-t border-slate-200 p-1.5">
+              <button
+                type="button"
+                onClick={signOut}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-right text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-50"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>تسجيل الخروج</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setIsUserMenuOpen((open) => !open)}
+          title="قائمة الحساب"
+          aria-label={`الحساب الحالي ${currentUser.fullName}`}
+          aria-haspopup="menu"
+          aria-expanded={isUserMenuOpen}
+          aria-controls="sidebar-user-menu"
+          className="flex w-full items-center gap-2.5 rounded-xl border border-slate-700 bg-slate-950/80 p-2.5 text-right transition-colors hover:border-slate-600 hover:bg-slate-800 cursor-pointer"
+        >
+          <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-sm font-bold text-white ring-1 ring-white/15">
+            <span className="text-[10px]">{avatarLabel}</span>
+            <span className="absolute bottom-0 left-0 h-2.5 w-2.5 rounded-full border-2 border-slate-950 bg-emerald-400" />
           </span>
-        </span>
-        <ChevronUp className="h-4 w-4 shrink-0 text-slate-400" />
-      </button>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[10px] text-slate-400">الحساب المتصل</span>
+            <span className="block truncate text-[11px] font-bold text-slate-100">{currentUser.fullName}</span>
+            <span className="block truncate text-[10px] text-slate-400">
+              {currentUser.role === 'dp_agent'
+                ? `${currentUser.dpCode || 'DP'} · ${currentUser.dpNameAr || currentUser.title}`
+                : currentUser.title}
+            </span>
+          </span>
+          {isUserMenuOpen
+            ? <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
+            : <ChevronUp className="h-4 w-4 shrink-0 text-slate-400" />}
+        </button>
+      </div>
 
       {/* Footer Info */}
       <div className="px-4 py-2.5 border-t border-slate-800 text-[10px] text-slate-400 flex items-center justify-between">
