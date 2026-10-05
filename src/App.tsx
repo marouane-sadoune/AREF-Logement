@@ -165,6 +165,8 @@ function HousingWorkspace() {
     if (selectedDossier?.id === finalDossier.id) {
       setSelectedDossier(finalDossier);
     }
+    
+    alert('تمت العملية بنجاح!');
   };
 
   const handleOpenPrint = (dossier: HousingDossier, docType: string = 'demande') => {
