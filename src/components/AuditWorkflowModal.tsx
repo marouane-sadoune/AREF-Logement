@@ -10,6 +10,7 @@ import {
   Stamp, 
   UserCheck, 
   FileText,
+  Eye,
   Calendar,
   X,
   ArrowRight,
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 import { HousingDossier, DossierStatus } from '../types/housing';
 import { useAuth } from '../context/AuthContext';
+import { getDossierDocumentUrl } from '../api/client';
 
 interface AuditWorkflowModalProps {
   dossier: HousingDossier;
@@ -85,6 +87,15 @@ export const AuditWorkflowModal: React.FC<AuditWorkflowModalProps> = ({
       isCurrent: dossier.status === 'approved',
       isPassed: false
     }
+  ];
+
+  const dossierDocuments = [
+    { key: 'demandeManuscrite', label: 'الطلب الخطي', document: dossier.documents.demandeManuscrite },
+    { key: 'copieCIN', label: 'نسخة بطاقة التعريف الوطنية', document: dossier.documents.copieCIN },
+    { key: 'attestationTravail', label: 'شهادة العمل', document: dossier.documents.attestationTravail },
+    { key: 'situationFamiliale', label: 'الوضع العائلي', document: dossier.documents.situationFamiliale },
+    { key: 'engagementHonneur', label: 'الالتزام والتصريح بالشرف', document: dossier.documents.engagementHonneur },
+    { key: 'pvInstallation', label: 'محضر الالتحاق بالمؤسسة', document: dossier.documents.pvInstallation },
   ];
 
   // 1. DP Action: Audit and verify within DP
@@ -313,31 +324,29 @@ export const AuditWorkflowModal: React.FC<AuditWorkflowModalProps> = ({
               </span>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-[11px]">
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className={`w-3.5 h-3.5 ${dossier.documents.demandeManuscrite.present ? 'text-emerald-600' : 'text-slate-300'}`} />
-                <span>الطلب الخطي</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className={`w-3.5 h-3.5 ${dossier.documents.copieCIN.present ? 'text-emerald-600' : 'text-slate-300'}`} />
-                <span>نسخة ب.ت.و (CIN)</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className={`w-3.5 h-3.5 ${dossier.documents.attestationTravail.present ? 'text-emerald-600' : 'text-slate-300'}`} />
-                <span>شهادة العمل حديثة</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className={`w-3.5 h-3.5 ${dossier.documents.situationFamiliale.present ? 'text-emerald-600' : 'text-slate-300'}`} />
-                <span>الوضع العائلي والأبناء</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className={`w-3.5 h-3.5 ${dossier.documents.engagementHonneur.present ? 'text-emerald-600' : 'text-slate-300'}`} />
-                <span>الالتزام مصحح الإمضاء</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className={`w-3.5 h-3.5 ${dossier.documents.pvInstallation.present ? 'text-emerald-600' : 'text-slate-300'}`} />
-                <span>محضر الالتحاق (PV)</span>
-              </div>
+            <div className="grid grid-cols-1 gap-2 text-[11px] sm:grid-cols-2">
+              {dossierDocuments.map(({ key, label, document }) => (
+                <div key={key} className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-2">
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <CheckCircle2 className={`h-3.5 w-3.5 shrink-0 ${document.present ? 'text-emerald-600' : 'text-slate-300'}`} />
+                    <span className="truncate text-slate-700">{label}</span>
+                  </div>
+                  {document.fileName ? (
+                    <a
+                      href={getDossierDocumentUrl(dossier.id, key)}
+                      target="_blank"
+                      rel="noreferrer"
+                      title={`معاينة ${document.fileName}`}
+                      className="inline-flex shrink-0 items-center gap-1 rounded px-2 py-1 font-semibold text-blue-700 hover:bg-blue-50 hover:text-blue-900"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      <span>معاينة</span>
+                    </a>
+                  ) : (
+                    <span className="shrink-0 text-[10px] text-slate-400">لا توجد نسخة رقمية</span>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
 

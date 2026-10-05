@@ -27,6 +27,7 @@ import {
 import { calculateBareme } from '../utils/bareme';
 import { useAuth } from '../context/AuthContext';
 import { getDossierDocumentUrl } from '../api/client';
+import { DocumentPreviewCard, DocumentPreviewCardData } from './DocumentPreviewCard';
 
 interface DossierFormProps {
   initialDossier?: HousingDossier | null;
@@ -112,6 +113,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
   // dossier only gets a real id at that point -- so the DP agent can inspect
   // them afterwards (view link next to each document).
   const [docFiles, setDocFiles] = useState<Partial<Record<keyof RequiredDocumentsChecklist, File>>>({});
+  const [previewDocData, setPreviewDocData] = useState<DocumentPreviewCardData | null>(null);
 
   const handleDocFileChange = (key: keyof RequiredDocumentsChecklist, file: File | null) => {
     setDocFiles(prev => ({ ...prev, [key]: file || undefined }));
@@ -150,7 +152,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
         <input
           type="file"
             id={`dossier-file-${key}`}
-          accept=".pdf,.jpg,.jpeg,.png"
+          accept=".pdf,.jpg,.jpeg,.png,.webp"
           onChange={(e) => handleDocFileChange(key, e.target.files?.[0] || null)}
             className="peer sr-only"
         />
@@ -166,14 +168,21 @@ export const DossierForm: React.FC<DossierFormProps> = ({
           <span className="w-full truncate text-left text-[10px] text-emerald-700" title={staged.name}>{staged.name}</span>
         )}
         {!staged && uploadedName && initialDossier?.id && (
-          <a
-            href={getDossierDocumentUrl(initialDossier.id, key)}
-            target="_blank"
-            rel="noreferrer"
-            className="text-[10px] text-sky-600 underline"
+          <button
+            type="button"
+            onClick={() => setPreviewDocData({
+              id: key,
+              titleAr: uploadedName,
+              descAr: '',
+              isPresent: true,
+              legalizationNeeded: false,
+              fileName: uploadedName,
+              fileUrl: getDossierDocumentUrl(initialDossier.id, key),
+            })}
+            className="flex items-center gap-1 text-[10px] font-semibold text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer"
           >
-            معاينة الملف
-          </a>
+            <span>&#128270;</span> معاينة الملف
+          </button>
         )}
       </div>
     );
@@ -251,6 +260,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
   ];
 
   return (
+    <>
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       {/* Form Header */}
       <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
@@ -897,5 +907,14 @@ export const DossierForm: React.FC<DossierFormProps> = ({
         </div>
       </form>
     </div>
+
+    {/* Document Preview Card Modal */}
+    {previewDocData && (
+      <DocumentPreviewCard
+        data={previewDocData}
+        onClose={() => setPreviewDocData(null)}
+      />
+    )}
+  </>
   );
 };

@@ -37,7 +37,7 @@ class DocumentController extends Controller
         abort_unless(in_array($docKey, self::SUPPORTING_DOC_KEYS, true), 404);
 
         $request->validate([
-            'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'file' => 'required|file|mimes:pdf,jpg,jpeg,png,webp|max:10240',
         ]);
 
         $dossier = DemandeLogement::findOrFail($dossierId);
@@ -70,7 +70,7 @@ class DocumentController extends Controller
         $path = $document->{"{$docKey}_path"};
         abort_if(empty($path) || !Storage::disk('local')->exists($path), 404);
 
-        return Storage::disk('local')->download($path);
+        return Storage::disk('local')->response($path);
     }
 
     /**

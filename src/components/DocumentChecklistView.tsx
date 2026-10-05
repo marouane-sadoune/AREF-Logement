@@ -14,6 +14,7 @@ import {
   Building,
   Printer
 } from 'lucide-react';
+import { DocumentPreviewCard, DocumentPreviewCardData } from './DocumentPreviewCard';
 import { HousingDossier } from '../types/housing';
 
 interface DocumentChecklistViewProps {
@@ -28,6 +29,7 @@ export const DocumentChecklistView: React.FC<DocumentChecklistViewProps> = ({
   onNavigateToDocumentGenerator
 }) => {
   const [activeUploadDoc, setActiveUploadDoc] = useState<string | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<DocumentPreviewCardData | null>(null);
 
   const toggleDocPresence = (docKey: keyof typeof dossier.documents) => {
     if (docKey === 'situationFamiliale') {
@@ -142,6 +144,7 @@ export const DocumentChecklistView: React.FC<DocumentChecklistViewProps> = ({
   const isComplete = presentCount === 6;
 
   return (
+    <>
     <div className="space-y-6">
       {/* Overview status box */}
       <div className={`p-4 rounded-xl border ${
@@ -273,6 +276,26 @@ export const DocumentChecklistView: React.FC<DocumentChecklistViewProps> = ({
 
                   {/* Right (RTL End): Actions */}
                   <div className="flex flex-wrap md:flex-col gap-2 shrink-0">
+                    {/* ── معاينة button ── */}
+                    <button
+                      onClick={() => setPreviewDoc({
+                        id: doc.id,
+                        titleAr: doc.titleAr,
+                        descAr: doc.descAr,
+                        isPresent,
+                        legalizationNeeded: doc.legalizationNeeded,
+                        isLegalized: ('isLegalized' in doc.data ? (doc.data as any).isLegalized : undefined),
+                        fileName: ('fileName' in doc.data ? doc.data.fileName : undefined),
+                        date: ('date' in doc.data ? doc.data.date : undefined),
+                        notes: ('notes' in doc.data ? doc.data.notes : undefined),
+                        fileUrl: undefined,
+                      })}
+                      className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>معاينة</span>
+                    </button>
+
                     <button
                       onClick={() => toggleDocPresence(doc.id as any)}
                       className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
@@ -344,5 +367,14 @@ export const DocumentChecklistView: React.FC<DocumentChecklistViewProps> = ({
         </div>
       </div>
     </div>
+
+    {/* ── Document Preview Card Modal ── */}
+    {previewDoc && (
+      <DocumentPreviewCard
+        data={previewDoc}
+        onClose={() => setPreviewDoc(null)}
+      />
+    )}
+  </>
   );
 };
