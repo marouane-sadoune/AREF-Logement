@@ -22,6 +22,7 @@ import {
 import { HousingDossier, DossierStatus } from '../types/housing';
 import { useAuth } from '../context/AuthContext';
 import { getDossierDocumentUrl } from '../api/client';
+import { DocumentPreviewCard, DocumentPreviewCardData } from './DocumentPreviewCard';
 
 interface AuditWorkflowModalProps {
   dossier: HousingDossier;
@@ -57,6 +58,8 @@ export const AuditWorkflowModal: React.FC<AuditWorkflowModalProps> = ({
   const [decisionNum, setDecisionNum] = useState<string>(
     dossier.arefDecision?.decisionNumber || `DEC/AREF-OR/${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`
   );
+
+  const [previewDocData, setPreviewDocData] = useState<DocumentPreviewCardData | null>(null);
 
   const steps = [
     {
@@ -331,20 +334,25 @@ export const AuditWorkflowModal: React.FC<AuditWorkflowModalProps> = ({
                     <CheckCircle2 className={`h-3.5 w-3.5 shrink-0 ${document.present ? 'text-emerald-600' : 'text-slate-300'}`} />
                     <span className="truncate text-slate-700">{label}</span>
                   </div>
-                  {document.fileName ? (
-                    <a
-                      href={getDossierDocumentUrl(dossier.id, key)}
-                      target="_blank"
-                      rel="noreferrer"
-                      title={`معاينة ${document.fileName}`}
-                      className="inline-flex shrink-0 items-center gap-1 rounded px-2 py-1 font-semibold text-blue-700 hover:bg-blue-50 hover:text-blue-900"
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                      <span>معاينة</span>
-                    </a>
-                  ) : (
-                    <span className="shrink-0 text-[10px] text-slate-400">لا توجد نسخة رقمية</span>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setPreviewDocData({
+                      id: key,
+                      titleAr: label,
+                      descAr: '',
+                      isPresent: document.present,
+                      legalizationNeeded: key === 'copieCIN' || key === 'engagementHonneur',
+                      isLegalized: ('isLegalized' in document ? (document as any).isLegalized : undefined),
+                      fileName: document.fileName,
+                      date: ('date' in document ? (document as any).date : undefined),
+                      notes: document.notes,
+                      fileUrl: document.fileName ? getDossierDocumentUrl(dossier.id, key) : undefined,
+                    })}
+                    className="inline-flex shrink-0 items-center gap-1 rounded px-2 py-1 font-semibold text-blue-700 hover:bg-blue-50 hover:text-blue-900 cursor-pointer"
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    <span>معاينة</span>
+                  </button>
                 </div>
               ))}
             </div>
@@ -589,6 +597,14 @@ export const AuditWorkflowModal: React.FC<AuditWorkflowModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Document Preview Card Modal */}
+      {previewDocData && (
+        <DocumentPreviewCard
+          data={previewDocData}
+          onClose={() => setPreviewDocData(null)}
+        />
+      )}
     </div>
   );
 };
