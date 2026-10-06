@@ -31,9 +31,15 @@ import { DocumentPreviewCard, DocumentPreviewCardData } from './DocumentPreviewC
 
 interface DossierFormProps {
   initialDossier?: HousingDossier | null;
-  onSave: (dossier: HousingDossier, docFiles?: Partial<Record<keyof RequiredDocumentsChecklist, File>>) => void;
+  onSave: (dossier: HousingDossier, docFiles?: Record<string, File | undefined>) => void;
   onCancel: () => void;
 }
+
+const SITUATION_FAMILIALE_SUB_DOCS = [
+  { flagKey: 'marriageCert', fileKey: 'situationFamilialeContratMariage', titleAr: 'أ. نسخة من عقد الزواج (إن وجد)', detailAr: 'نسخة من عقد الزواج الرسمي للمستفيد، إن وجد.' },
+  { flagKey: 'spouseAttestation', fileKey: 'situationFamilialeAttestationConjoint', titleAr: 'ب. شهادة إدارية تثبت وضعية عمل الزوج/الزوجة', detailAr: 'تثبت الوضعية الإدارية للزوج أو الزوجة في حالة كونه موظفاً بدوره.' },
+  { flagKey: 'childrenCertificates', fileKey: 'situationFamilialeEnfants', titleAr: 'ج. بيان عدد الأطفال المعالين', detailAr: 'بيان أو وثائق تثبت عدد الأطفال المعالين (عقود الأزدياد).' },
+] as const;
 
 export const DossierForm: React.FC<DossierFormProps> = ({
   initialDossier,
@@ -112,7 +118,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
   // uploaded to the backend once the dossier itself has been saved -- a new
   // dossier only gets a real id at that point -- so the DP agent can inspect
   // them afterwards (view link next to each document).
-  const [docFiles, setDocFiles] = useState<Partial<Record<keyof RequiredDocumentsChecklist, File>>>({});
+  const [docFiles, setDocFiles] = useState<Record<string, File | undefined>>({});
   const [previewDocData, setPreviewDocData] = useState<DocumentPreviewCardData | null>(null);
 
   const handleDocFileChange = (key: keyof RequiredDocumentsChecklist, file: File | null) => {
@@ -123,6 +129,34 @@ export const DossierForm: React.FC<DossierFormProps> = ({
         [key]: { ...(prev[key] as any), present: true, fileName: file.name }
       } as RequiredDocumentsChecklist));
     }
+  };
+
+  const handleSituationFamilialeFileChange = (
+    subDoc: (typeof SITUATION_FAMILIALE_SUB_DOCS)[number],
+    file: File | null
+  ) => {
+    setDocFiles(prev => ({ ...prev, [subDoc.fileKey]: file || undefined }));
+    setDocuments(prev => {
+      const sf = prev.situationFamiliale;
+      const next: any = {
+        ...sf,
+        [subDoc.flagKey]: file ? true : sf[subDoc.flagKey],
+        present: true,
+      };
+      if (file) next[`${subDoc.flagKey}FileName`] = file.name;
+      return { ...prev, situationFamiliale: next };
+    });
+  };
+
+  const toggleSituationFamilialeFlag = (
+    flagKey: 'marriageCert' | 'spouseAttestation' | 'childrenCertificates',
+    checked: boolean
+  ) => {
+    setDocuments(prev => {
+      const sf = { ...prev.situationFamiliale, [flagKey]: checked };
+      sf.present = sf.marriageCert || sf.spouseAttestation || sf.childrenCertificates;
+      return { ...prev, situationFamiliale: sf };
+    });
   };
 
   // File input + inspect link for one of the 6 mandatory documents.
@@ -763,14 +797,72 @@ export const DossierForm: React.FC<DossierFormProps> = ({
               </div>
 
               {/* Doc 4 */}
-              <div className="grid grid-cols-1 items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs sm:grid-cols-[minmax(0,1fr)_13rem]">
+              <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs">
                 <div className="min-w-0 space-y-1">
                   <div className="font-bold text-slate-900">4. الوضع العائلي (Situation Familiale)</div>
                   <div className="text-slate-500 text-[11px]">
-                    عقد الزواج + شهادة إدارية تثبت عمل الزوج(ة) (إن كان موظفاً) + بيان عدد الأطفال المعالين (عقود ازدياد).
+                    ثلاث وثائق: عقد الزواج (إن وجد)، شهادة إدارية تثبت عمل الزوج/الزوجة، وبيان عدد الأطفال المعالين.
                   </div>
                 </div>
-                {renderDocFileControl('situationFamiliale')}
+                {SITUATION_FAMILIALE_SUB_DOCS.map((sub) => {
+                  const staged = docFiles[sub.fileKey];
+                  const uploadedName = (documents.situationFamiliale as any)[`${sub.flagKey}FileName`] as string | undefined;
+                  return (
+                    <div key={sub.fileKey} className="grid grid-cols-1 items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 text-xs sm:grid-cols-[minmax(0,1fr)_13rem]">
+                      <div className="min-w-0 space-y-1">
+                        <div className="font-semibold text-slate-800">{sub.titleAr}</div>
+                        <div className="text-slate-500 text-[11px]">{sub.detailAr}</div>
+                      </div>
+                      <div className="flex w-full flex-col gap-2 sm:w-52">
+                        <label className="flex min-h-10 items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
+                          <span className="text-[11px] font-medium">الوثيقة متوفرة</span>
+                          <input
+                            type="checkbox"
+                            checked={documents.situationFamiliale[sub.flagKey]}
+                            onChange={(e) => toggleSituationFamilialeFlag(sub.flagKey, e.target.checked)}
+                            className="h-4 w-4 shrink-0 cursor-pointer rounded accent-emerald-600"
+                          />
+                        </label>
+                        <div className="min-w-0">
+                          <input
+                            type="file"
+                            id={`dossier-file-${sub.fileKey}`}
+                            accept=".pdf,.jpg,.jpeg,.png,.webp"
+                            onChange={(e) => handleSituationFamilialeFileChange(sub, e.target.files?.[0] || null)}
+                            className="peer sr-only"
+                          />
+                          <label
+                            htmlFor={`dossier-file-${sub.fileKey}`}
+                            className="flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 transition-colors hover:border-emerald-500 hover:bg-emerald-50 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-emerald-600"
+                          >
+                            <Upload className="h-4 w-4 text-emerald-700" />
+                            <span>اختيار ملف</span>
+                          </label>
+                        </div>
+                        {staged && (
+                          <span className="w-full truncate text-left text-[10px] text-emerald-700" title={staged.name}>{staged.name}</span>
+                        )}
+                        {!staged && uploadedName && initialDossier?.id && (
+                          <button
+                            type="button"
+                            onClick={() => setPreviewDocData({
+                              id: sub.fileKey,
+                              titleAr: uploadedName,
+                              descAr: '',
+                              isPresent: true,
+                              legalizationNeeded: false,
+                              fileName: uploadedName,
+                              fileUrl: getDossierDocumentUrl(initialDossier.id, sub.fileKey),
+                            })}
+                            className="flex items-center gap-1 text-[10px] font-semibold text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer"
+                          >
+                            <span>&#128270;</span> معاينة الملف
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Doc 5 */}

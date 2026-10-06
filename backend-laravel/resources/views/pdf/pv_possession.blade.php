@@ -5,7 +5,7 @@
     <title>محضر تسليم السكن - {{ $dossier->numero_dossier }}</title>
     <style>
         @page { margin: 24px 40px; }
-        body { font-family: 'DejaVu Sans', sans-serif; direction: rtl; text-align: right; font-size: 15px; line-height: 2; color: #111; }
+        body { font-family: 'amiri', 'DejaVu Sans', sans-serif; direction: rtl; text-align: right; font-size: 15px; line-height: 2; color: #111; }
         .header { text-align: center; margin-bottom: 28px; }
         .header img { width: 85%; height: auto; }
         h1 { text-align: center; font-size: 20px; margin: 24px 0; }

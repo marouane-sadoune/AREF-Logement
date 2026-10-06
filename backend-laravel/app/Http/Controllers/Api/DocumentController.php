@@ -24,8 +24,17 @@ class DocumentController extends Controller
         'copie_cin',
         'attestation_travail',
         'situation_familiale',
+        'situation_familiale_contrat_mariage',
+        'situation_familiale_attestation_conjoint',
+        'situation_familiale_enfants',
         'engagement_honneur',
         'pv_installation',
+    ];
+
+    private const SITUATION_FAMILIALE_SUB_KEYS = [
+        'situation_familiale_contrat_mariage',
+        'situation_familiale_attestation_conjoint',
+        'situation_familiale_enfants',
     ];
 
     /**
@@ -45,15 +54,37 @@ class DocumentController extends Controller
 
         $path = $request->file('file')->store("dossiers/{$dossier->numero_dossier}", 'local');
 
+        $flagColumn = in_array($docKey, self::SITUATION_FAMILIALE_SUB_KEYS, true) ? 'situation_familiale' : $docKey;
         $document->update([
             "{$docKey}_path" => $path,
-            $docKey => true,
+            $flagColumn => true,
         ]);
 
         return response()->json([
             'message' => 'تم رفع الوثيقة بنجاح',
             'fileName' => basename($path),
         ]);
+    }
+
+    /**
+     * Register the Amiri Arabic fonts with dompdf so Arabic text in the
+     * generated PDFs renders correctly (DejaVu Sans has no Arabic glyphs).
+     */
+    private function registerArabicFonts($pdf): void
+    {
+        $metrics = $pdf->getDomPDF()->getFontMetrics();
+        $metrics->registerFont(
+            ['family' => 'amiri', 'style' => 'normal', 'weight' => 'normal'],
+            storage_path('fonts/Amiri-Regular.ttf')
+        );
+        $metrics->registerFont(
+            ['family' => 'amiri', 'style' => 'normal', 'weight' => 'bold'],
+            storage_path('fonts/Amiri-Bold.ttf')
+        );
+        $metrics->registerFont(
+            ['family' => 'amiri', 'style' => 'italic', 'weight' => 'normal'],
+            storage_path('fonts/Amiri-Italic.ttf')
+        );
     }
 
     /**
@@ -87,6 +118,7 @@ class DocumentController extends Controller
                 'isRemoteEnabled' => true,
                 'defaultFont' => 'amiri'
             ]);
+        $this->registerArabicFonts($pdf);
 
         $filename = 'Accord_Attribution_' . $dossier->candidat->ppr . '.pdf';
 
@@ -102,6 +134,7 @@ class DocumentController extends Controller
 
         $pdf = Pdf::loadView('pdf.pv_possession', compact('dossier'))
             ->setPaper('a4', 'portrait');
+        $this->registerArabicFonts($pdf);
 
         return $pdf->stream('PV_Prise_Possession_' . $dossier->candidat->ppr . '.pdf');
     }

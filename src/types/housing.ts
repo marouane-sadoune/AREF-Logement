@@ -24,8 +24,11 @@ export interface RequiredDocumentStatus {
 export interface SituationFamilialeDocs {
   present: boolean;
   marriageCert: boolean;
+  marriageCertFileName?: string;
   spouseAttestation: boolean;
+  spouseAttestationFileName?: string;
   childrenCertificates: boolean;
+  childrenCertificatesFileName?: string;
   notes?: string;
   fileName?: string;
 }

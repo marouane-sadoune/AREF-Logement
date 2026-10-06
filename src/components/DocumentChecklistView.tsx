@@ -246,6 +246,16 @@ export const DocumentChecklistView: React.FC<DocumentChecklistViewProps> = ({
                         }`}>
                           {dossier.documents.situationFamiliale.marriageCert ? '✓ عقد الزواج مرفق' : '✗ عقد الزواج مفقود'}
                         </span>
+                        <span className={`px-2 py-0.5 rounded ${
+                          dossier.documents.situationFamiliale.spouseAttestation ? 'bg-slate-100 text-slate-800' : 'bg-rose-50 text-rose-700'
+                        }`}>
+                          {dossier.documents.situationFamiliale.spouseAttestation ? '✓ شهادة عمل الزوج(ة) مرفقة' : '✗ شهادة عمل الزوج(ة) مفقودة'}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded ${
+                          dossier.documents.situationFamiliale.childrenCertificates ? 'bg-slate-100 text-slate-800' : 'bg-rose-50 text-rose-700'
+                        }`}>
+                          {dossier.documents.situationFamiliale.childrenCertificates ? '✓ بيان الأطفال المعالين مرفق' : '✗ بيان الأطفال المعالين مفقود'}
+                        </span>
                         <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-800">
                           عدد الأطفال المعالين: {dossier.situationFamiliale.childrenCount}
                         </span>
@@ -253,6 +263,21 @@ export const DocumentChecklistView: React.FC<DocumentChecklistViewProps> = ({
                           <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-800">
                             الزوج(ة) موظف: {dossier.situationFamiliale.spouseAdministration || 'قطاع عام'}
                           </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Attached sub-file names for situation familiale */}
+                    {doc.id === 'situationFamiliale' && (
+                      <div className="text-[11px] text-slate-500 space-y-0.5">
+                        {dossier.documents.situationFamiliale.marriageCertFileName && (
+                          <div>📄 عقد الزواج: <span className="font-mono text-emerald-700">{dossier.documents.situationFamiliale.marriageCertFileName}</span></div>
+                        )}
+                        {dossier.documents.situationFamiliale.spouseAttestationFileName && (
+                          <div>📄 شهادة عمل الزوج(ة): <span className="font-mono text-emerald-700">{dossier.documents.situationFamiliale.spouseAttestationFileName}</span></div>
+                        )}
+                        {dossier.documents.situationFamiliale.childrenCertificatesFileName && (
+                          <div>📄 بيان الأطفال المعالين: <span className="font-mono text-emerald-700">{dossier.documents.situationFamiliale.childrenCertificatesFileName}</span></div>
                         )}
                       </div>
                     )}
