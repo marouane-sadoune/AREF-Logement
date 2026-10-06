@@ -251,7 +251,10 @@ function HousingWorkspace() {
                   setEditingDossier(d);
                   setActiveTab('new_dossier');
                 }}
-                onOpenAudit={(d) => setAuditDossier(d)}
+                onOpenAudit={(d) => {
+                  setActiveTab('audit');
+                  setAuditDossier(d);
+                }}
                 onPrintDocuments={(d) => handleOpenPrint(d, d.status === 'approved' ? 'accord_attribution' : 'demande')}
                 onDeleteDossier={handleDeleteDossier}
               />
@@ -279,7 +282,7 @@ function HousingWorkspace() {
             )}
 
             {/* View: Audit Workflow (DP -> AREF) */}
-            {activeTab === 'audit' && (
+            {activeTab === 'audit' && !auditDossier && (
               <div className="space-y-4">
                 <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
@@ -334,6 +337,15 @@ function HousingWorkspace() {
               </div>
             )}
 
+            {activeTab === 'audit' && auditDossier && (
+              <AuditWorkflowModal
+                dossier={auditDossier}
+                onClose={() => setAuditDossier(null)}
+                onUpdateStatus={handleUpdateStatus}
+                onOpenApprovalLetter={(d) => handleOpenPrint(d, 'accord_attribution')}
+              />
+            )}
+
             {/* View: User Management View (4 Roles & DPs) */}
             {activeTab === 'users' && permissions.canManageUsers && <UserManagementView />}
 
@@ -367,6 +379,7 @@ function HousingWorkspace() {
           }}
           onOpenAudit={(d) => {
             setSelectedDossier(null);
+            setActiveTab('audit');
             setAuditDossier(d);
           }}
           onPrintDocuments={(d) => {
@@ -380,15 +393,7 @@ function HousingWorkspace() {
         />
       )}
 
-      {/* Modal: Audit & Transmission (DP -> AREF) */}
-      {auditDossier && (
-        <AuditWorkflowModal
-          dossier={auditDossier}
-          onClose={() => setAuditDossier(null)}
-          onUpdateStatus={handleUpdateStatus}
-          onOpenApprovalLetter={(d) => handleOpenPrint(d, 'accord_attribution')}
-        />
-      )}
+
 
       {/* Modal: User Profile Switcher (Testing the 4 Roles) */}
       <UserSwitcherModal

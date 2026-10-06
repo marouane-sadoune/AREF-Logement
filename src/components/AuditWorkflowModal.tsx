@@ -46,7 +46,7 @@ export const AuditWorkflowModal: React.FC<AuditWorkflowModalProps> = ({
 
   // Choose sensible default action based on role
   const defaultAction = 
-    currentUser.role === 'dp_agent' ? 'transmit' :
+    currentUser.role === 'dp_agent' ? (!dossier.dpAudit?.isComplete ? 'dp_audit' : 'transmit') :
     currentUser.role === 'aref_validator' ? 'validator_review' :
     currentUser.role === 'aref_director' ? 'approve' : 'dp_audit';
 
@@ -60,6 +60,7 @@ export const AuditWorkflowModal: React.FC<AuditWorkflowModalProps> = ({
   );
 
   const [previewDocData, setPreviewDocData] = useState<DocumentPreviewCardData | null>(null);
+  const [previewedDocs, setPreviewedDocs] = useState<Set<string>>(new Set());
 
   const steps = [
     {
@@ -205,8 +206,8 @@ export const AuditWorkflowModal: React.FC<AuditWorkflowModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto" dir="rtl">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full overflow-hidden">
+    <div className="w-full max-w-5xl mx-auto pb-10" dir="rtl">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm w-full overflow-hidden">
         {/* Modal Header */}
         <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -230,9 +231,10 @@ export const AuditWorkflowModal: React.FC<AuditWorkflowModalProps> = ({
 
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded transition-colors cursor-pointer"
+            className="text-slate-400 hover:text-white p-2 rounded transition-colors cursor-pointer flex items-center gap-1.5 text-sm font-semibold"
           >
-            <X className="w-5 h-5" />
+            <ArrowRight className="w-5 h-5" />
+            <span>رجوع</span>
           </button>
         </div>
 
@@ -336,18 +338,21 @@ export const AuditWorkflowModal: React.FC<AuditWorkflowModalProps> = ({
                   </div>
                   <button
                     type="button"
-                    onClick={() => setPreviewDocData({
-                      id: key,
-                      titleAr: label,
-                      descAr: '',
-                      isPresent: document.present,
-                      legalizationNeeded: key === 'copieCIN' || key === 'engagementHonneur',
-                      isLegalized: ('isLegalized' in document ? (document as any).isLegalized : undefined),
-                      fileName: document.fileName,
-                      date: ('date' in document ? (document as any).date : undefined),
-                      notes: document.notes,
-                      fileUrl: document.fileName ? getDossierDocumentUrl(dossier.id, key) : undefined,
-                    })}
+                    onClick={() => {
+                      setPreviewedDocs(prev => new Set(prev).add(key));
+                      setPreviewDocData({
+                        id: key,
+                        titleAr: label,
+                        descAr: '',
+                        isPresent: document.present,
+                        legalizationNeeded: key === 'copieCIN' || key === 'engagementHonneur',
+                        isLegalized: ('isLegalized' in document ? (document as any).isLegalized : undefined),
+                        fileName: document.fileName,
+                        date: ('date' in document ? (document as any).date : undefined),
+                        notes: document.notes,
+                        fileUrl: document.fileName ? getDossierDocumentUrl(dossier.id, key) : undefined,
+                      });
+                    }}
                     className="inline-flex shrink-0 items-center gap-1 rounded px-2 py-1 font-semibold text-blue-700 hover:bg-blue-50 hover:text-blue-900 cursor-pointer"
                   >
                     <Eye className="h-3.5 w-3.5" />
@@ -386,8 +391,11 @@ export const AuditWorkflowModal: React.FC<AuditWorkflowModalProps> = ({
 
                   <button
                     type="button"
+                    disabled={!dossier.dpAudit?.isComplete}
                     onClick={() => setActiveAction('transmit')}
-                    className={`p-3 rounded-lg border text-xs font-semibold text-right transition-colors cursor-pointer ${
+                    className={`p-3 rounded-lg border text-xs font-semibold text-right transition-colors ${
+                      !dossier.dpAudit?.isComplete ? 'opacity-50 cursor-not-allowed bg-slate-50' : 'cursor-pointer'
+                    } ${
                       activeAction === 'transmit'
                         ? 'bg-blue-50 border-blue-400 text-blue-950'
                         : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
@@ -548,8 +556,14 @@ export const AuditWorkflowModal: React.FC<AuditWorkflowModalProps> = ({
             {activeAction === 'dp_audit' && (
               <button
                 onClick={handleValidateDP}
+                disabled={previewedDocs.size < dossierDocuments.length}
                 type="button"
-                className="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer"
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold shadow-xs transition-colors ${
+                  previewedDocs.size < dossierDocuments.length
+                    ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                    : 'bg-amber-600 hover:bg-amber-700 text-white cursor-pointer'
+                }`}
+                title={previewedDocs.size < dossierDocuments.length ? 'يجب معاينة جميع الوثائق أولاً' : ''}
               >
                 تأكيد تدقيق المديرية (DP)
               </button>
