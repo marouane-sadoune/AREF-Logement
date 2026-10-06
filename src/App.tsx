@@ -20,6 +20,7 @@ import { HousingDossier, DossierStatus } from './types/housing';
 import { INITIAL_DOSSIERS } from './data/mockDossiers';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import * as api from './api/client';
+import Swal from 'sweetalert2';
 
 const normalizeDirectorate = (name: string) => name
   .normalize('NFKC')
@@ -153,7 +154,13 @@ function HousingWorkspace() {
         arefDecision: { ...(updatedDossier.arefDecision || {}), ...fresh.arefDecision },
       };
     } catch (e) {
-      alert('فشل تحديث حالة الملف في الخادم: ' + (e as Error).message);
+      Swal.fire({
+        icon: 'error',
+        title: 'خطأ',
+        text: 'فشل تحديث حالة الملف في الخادم: ' + (e as Error).message,
+        confirmButtonText: 'حسناً',
+        confirmButtonColor: '#059669',
+      });
       return;
     }
 
@@ -166,7 +173,16 @@ function HousingWorkspace() {
       setSelectedDossier(finalDossier);
     }
     
-    alert('تمت العملية بنجاح!');
+    Swal.fire({
+      icon: 'success',
+      title: 'تم بنجاح',
+      text: 'تمت العملية بنجاح!',
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+    });
   };
 
   const handleOpenPrint = (dossier: HousingDossier, docType: string = 'demande') => {
