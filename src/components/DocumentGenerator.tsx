@@ -210,7 +210,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               <div className="flex justify-end pt-8 pb-10">
                 <div className="text-center space-y-2">
                   <div className="text-xs text-slate-600 font-sans">
-                    وجدة في: {activeDossier.arefDecision?.pvDecisionDate || new Date().toISOString().split('T')[0]}
+                    وجدة في: {activeDossier.arefDecision?.commissionDate || activeDossier.arefDecision?.pvDecisionDate || new Date().toISOString().split('T')[0]}
                   </div>
                   <div className="font-bold text-sm">عن مديرة الأكاديمية الجهوية للتربية والتكوين</div>
                   <div className="text-xs text-slate-700">جهة الشرق</div>

@@ -195,6 +195,11 @@ export const AuditWorkflowModal: React.FC<AuditWorkflowModalProps> = ({
       'approved',
       comment || `المصادقة النهائية والتوقيع الرسمي لقرار الإسناد رقم ${decisionNum} من طرف السيد مدير الأكاديمية الجهوية لجهة الشرق`
     );
+    // Once the director confirms, go straight to the official approval letter
+    if (onOpenApprovalLetter) {
+      onClose();
+      onOpenApprovalLetter(updated);
+    }
   };
 
   const handleReject = () => {
