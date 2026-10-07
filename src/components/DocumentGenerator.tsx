@@ -182,7 +182,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               <div className="my-5 text-[15px] space-y-1 bg-slate-50/60 p-3 rounded-lg border border-slate-200">
                 <p><strong><u>الموضوع:</u></strong> الموافقة على إسناد سكن وظيفي.</p>
                 <p className="leading-relaxed">
-                  <strong><u>المرجع:</u></strong> إرساليتكم عدد <span className="font-mono font-bold text-slate-900">{activeDossier.dpAudit?.bordereauNumber || '24/1109'}</span> بتاريخ <span className="font-mono">{activeDossier.dpAudit?.transmissionDate || activeDossier.creationDate}</span><br />
+                  <strong><u>المرجع:</u></strong> إرساليتكم عدد <span className="font-mono font-bold text-slate-900">{activeDossier.dpAudit?.bordereauNumber || '24/1109'}</span> بتاريخ <span className="font-mono">{String(activeDossier.dpAudit?.transmissionDate || activeDossier.creationDate || '').slice(0, 10)}</span><br />
                   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;المذكرة الوزارية رقم 40 بتاريخ 10 ماي 2004
                 </p>
               </div>
@@ -210,7 +210,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               <div className="flex justify-end pt-8 pb-10">
                 <div className="text-center space-y-2">
                   <div className="text-xs text-slate-600 font-sans">
-                    وجدة في: {activeDossier.arefDecision?.commissionDate || activeDossier.arefDecision?.pvDecisionDate || new Date().toISOString().split('T')[0]}
+                    وجدة في: {String(activeDossier.arefDecision?.commissionDate || activeDossier.arefDecision?.pvDecisionDate || new Date().toISOString().split('T')[0]).slice(0, 10)}
                   </div>
                   <div className="font-bold text-sm">عن مديرة الأكاديمية الجهوية للتربية والتكوين</div>
                   <div className="text-xs text-slate-700">جهة الشرق</div>

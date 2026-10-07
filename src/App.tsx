@@ -22,6 +22,7 @@ import { HousingDossier, DossierStatus } from './types/housing';
 import { INITIAL_DOSSIERS } from './data/mockDossiers';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import * as api from './api/client';
+import { StatusTimeline } from './components/StatusTimeline';
 import Swal from 'sweetalert2';
 
 const normalizeDirectorate = (name: string) => name
@@ -359,6 +360,8 @@ function HousingWorkspace() {
                         <span>نوع السكن: <strong>{d.housingRequest.housingType === 'fonction' ? 'وظيفي' : 'إداري'}</strong></span>
                         <span>مجموع النقط: <strong className="font-mono text-emerald-800">{d.bareme.totalPts}</strong></span>
                       </div>
+
+                      <StatusTimeline dossier={d} />
 
                       <button
                         onClick={() => setAuditDossier(d)}

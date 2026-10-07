@@ -145,12 +145,12 @@ export function mapApiToDossier(api: any): HousingDossier {
     })),
     dpAudit: {
       bordereauNumber: api.numero_bordereau_dp || undefined,
-      transmissionDate: api.date_transmission_aref || undefined,
+      transmissionDate: api.date_transmission_aref ? String(api.date_transmission_aref).slice(0, 10) : undefined,
       isComplete: Object.values(docs).every(Boolean),
     },
     arefDecision: {
       decisionNumber: api.numero_decision_aref || undefined,
-      commissionDate: api.date_commission_aref || undefined,
+      commissionDate: api.date_commission_aref ? String(api.date_commission_aref).slice(0, 10) : undefined,
     },
   };
 }
