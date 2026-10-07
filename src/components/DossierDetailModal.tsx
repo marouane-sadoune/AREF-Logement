@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { HousingDossier } from '../types/housing';
 import { DocumentChecklistView } from './DocumentChecklistView';
+import { StatusTimeline } from './StatusTimeline';
 
 interface DossierDetailModalProps {
   dossier: HousingDossier;
@@ -276,7 +277,8 @@ export const DossierDetailModal: React.FC<DossierDetailModalProps> = ({
           )}
 
           {activeTab === 'history' && (
-            <div className="space-y-3">
+            <div className="space-y-4">
+              <StatusTimeline dossier={dossier} />
               <h3 className="text-xs font-bold text-slate-800">المراحل والقرارات المسجلة على هذا الملف:</h3>
               <div className="space-y-2">
                 {dossier.auditHistory.map((item, idx) => (
