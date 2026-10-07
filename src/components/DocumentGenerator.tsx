@@ -214,13 +214,8 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                   </div>
                   <div className="font-bold text-sm">عن مديرة الأكاديمية الجهوية للتربية والتكوين</div>
                   <div className="text-xs text-slate-700">جهة الشرق</div>
-                  <div className="w-40 h-28 border-2 border-dashed border-amber-400 bg-amber-50/50 rounded-xl flex flex-col items-center justify-center text-amber-900 text-[10px] mx-auto shadow-2xs">
-                    <Stamp className="w-9 h-9 text-amber-700 opacity-70 mb-1" />
-                    <span className="font-bold">توقيع وخاتم الأكاديمية الرسمي</span>
-                    <span className="font-mono text-[9px] text-slate-600 mt-0.5">
-                      {activeDossier.arefDecision?.decisionNumber || 'DEC/AREF/2026/049'}
-                    </span>
-                  </div>
+                  {/* Blank space reserved for handwritten signature & stamp after printing */}
+                  <div className="w-40 h-28 mx-auto" />
                 </div>
               </div>
             </div>
@@ -327,17 +322,13 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               <div>
                 <div className="font-bold text-slate-800">تأشيرة وموافقة رئيس المؤسسة</div>
                 <div className="text-[10px] text-slate-500">(الرأي، التاريخ والخاتم)</div>
-                <div className="h-20 border border-dashed border-slate-300 rounded mt-2 flex items-center justify-center text-slate-400">
-                  خاتم المؤسسة التعليمية
-                </div>
+                <div className="h-20 mt-2" />
               </div>
 
               <div>
                 <div className="font-bold text-slate-800">توقيع المعني بالأمر</div>
                 <div className="text-[10px] text-slate-500">{candidate.fullNameAr}</div>
-                <div className="h-20 border border-dashed border-slate-300 rounded mt-2 flex items-center justify-center text-slate-400">
-                  توقيع المترشح(ة)
-                </div>
+                <div className="h-20 mt-2" />
               </div>
             </div>
           </div>
@@ -417,9 +408,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                 <div className="text-[11px] text-slate-600">
                   (مصحوب بعبارة "قرئ وصودق عليه ويلتزم به")
                 </div>
-                <div className="h-24 flex items-center justify-center text-slate-400">
-                  توقيع {candidate.fullNameAr}
-                </div>
+                <div className="h-24" />
               </div>
 
               <div className="border-2 border-slate-400 p-4 rounded bg-white">
@@ -553,15 +542,15 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
             <div className="grid grid-cols-3 gap-4 pt-6 text-center text-[11px]">
               <div className="border border-slate-300 p-2 rounded">
                 <div className="font-bold text-slate-800">توقيع المترشح(ة)</div>
-                <div className="h-16 flex items-center justify-center text-slate-400">توقيع المعني</div>
+                <div className="h-16" />
               </div>
               <div className="border border-slate-300 p-2 rounded">
                 <div className="font-bold text-slate-800">رئيس المؤسسة التعليمية</div>
-                <div className="h-16 flex items-center justify-center text-slate-400">توقيع وخاتم المؤسسة</div>
+                <div className="h-16" />
               </div>
               <div className="border border-slate-300 p-2 rounded">
                 <div className="font-bold text-slate-800">رئيس مصلحة الموارد البشرية بالـ DP</div>
-                <div className="h-16 flex items-center justify-center text-slate-400">تأشيرة المديرية الإقليمية</div>
+                <div className="h-16" />
               </div>
             </div>
           </div>
@@ -638,7 +627,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
             <div className="grid grid-cols-2 gap-8 pt-8 text-center">
               <div>
                 <div className="font-bold">توقيع المودع (المترشح)</div>
-                <div className="h-16 flex items-center justify-center text-slate-400">توقيع المستلم</div>
+                <div className="h-16" />
               </div>
               <div>
                 <div className="font-bold">مكتب الضبط والسكنيات بالمديرية الإقليمية</div>
@@ -717,7 +706,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               </div>
               <div>
                 <div className="font-bold">المدير الإقليمي لوزارة التربية الوطنية</div>
-                <div className="h-20 flex items-center justify-center text-slate-400">خاتم وتوقيع المدير الإقليمي</div>
+                <div className="h-20" />
               </div>
             </div>
           </div>
@@ -796,15 +785,15 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
             <div className="grid grid-cols-3 gap-4 pt-6 text-center text-[11px]">
               <div>
                 <div className="font-bold">المستفيد(ة)</div>
-                <div className="h-16 flex items-center justify-center text-slate-400">توقيع المستفيد</div>
+                <div className="h-16" />
               </div>
               <div>
                 <div className="font-bold">رئيس المؤسسة</div>
-                <div className="h-16 flex items-center justify-center text-slate-400">توقيع وخاتم</div>
+                <div className="h-16" />
               </div>
               <div>
                 <div className="font-bold">ممثل المديرية الإقليمية</div>
-                <div className="h-16 flex items-center justify-center text-slate-400">خاتم وتأشيرة DP</div>
+                <div className="h-16" />
               </div>
             </div>
           </div>

@@ -24,10 +24,12 @@ import {
   ShieldAlert,
   ArrowRight,
   SlidersHorizontal,
-  X
+  X,
+  Archive
 } from 'lucide-react';
 import { HousingDossier, DossierStatus } from '../types/housing';
 import { useAuth } from '../context/AuthContext';
+import { isArchivable, closureAgeLabel, getClosureDate } from '../utils/archive';
 
 interface DossierListProps {
   dossiers: HousingDossier[];
@@ -37,6 +39,8 @@ interface DossierListProps {
   onOpenAudit: (dossier: HousingDossier) => void;
   onPrintDocuments: (dossier: HousingDossier) => void;
   onDeleteDossier: (id: string) => void;
+  onArchiveDossier?: (id: string) => void;
+  onArchiveAllArchivable?: () => void;
 }
 
 export const DossierList: React.FC<DossierListProps> = ({
@@ -46,7 +50,9 @@ export const DossierList: React.FC<DossierListProps> = ({
   onEditDossier,
   onOpenAudit,
   onPrintDocuments,
-  onDeleteDossier
+  onDeleteDossier,
+  onArchiveDossier,
+  onArchiveAllArchivable
 }) => {
   const { currentUser, permissions } = useAuth();
 
@@ -451,6 +457,30 @@ export const DossierList: React.FC<DossierListProps> = ({
         </div>
       </div>
 
+      {/* Suggestion banner: dossiers that can be archived (closed > 1 year) */}
+      {(() => {
+        const archivableCount = dossiers.filter((d) => isArchivable(d)).length;
+        if (archivableCount === 0 || !onArchiveDossier) return null;
+        return (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between gap-3 text-amber-900">
+            <div className="flex items-center gap-3">
+              <Archive className="w-5 h-5 text-amber-600" />
+              <p className="text-xs font-semibold">
+                يوجد {archivableCount} ملف(ات) أُغلقت منذ أكثر من سنة ويمكن نقلها للأرشيف لتخفيف القائمة النشطة.
+              </p>
+            </div>
+            {onArchiveAllArchivable && (
+              <button
+                onClick={onArchiveAllArchivable}
+                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0"
+              >
+                أرشفة الكل
+              </button>
+            )}
+          </div>
+        );
+      })()}
+
       {/* Dossiers Grid / Table */}
       {filteredDossiers.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 p-12 text-center space-y-3">
@@ -652,6 +682,15 @@ export const DossierList: React.FC<DossierListProps> = ({
 
                     {/* Edit and Delete if allowed */}
                     <div className="flex items-center gap-2 justify-end pt-1">
+                      {onArchiveDossier && isArchivable(dossier) && (
+                        <button
+                          onClick={() => onArchiveDossier(dossier.id)}
+                          title={`أرشفة الملف (مغلق منذ ${closureAgeLabel(dossier)})`}
+                          className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors cursor-pointer"
+                        >
+                          <Archive className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                       {permissions.canEditDossier && (
                         <button
                           onClick={() => onEditDossier(dossier)}

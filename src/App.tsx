@@ -16,6 +16,8 @@ import { DossierDetailModal } from './components/DossierDetailModal';
 import { UserSwitcherModal } from './components/UserSwitcherModal';
 import { UserManagementView } from './components/UserManagementView';
 import { SignInView } from './components/SignInView';
+import { ArchiveView } from './components/ArchiveView';
+import { isArchivable } from './utils/archive';
 import { HousingDossier, DossierStatus } from './types/housing';
 import { INITIAL_DOSSIERS } from './data/mockDossiers';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -41,6 +43,18 @@ function HousingWorkspace() {
   const [isLoadingDossiers, setIsLoadingDossiers] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
+  // Archived dossier ids (closed more than a year ago), persisted locally.
+  const [archivedIds, setArchivedIds] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('aref_archived_ids') || '[]');
+    } catch {
+      return [];
+    }
+  });
+  useEffect(() => {
+    localStorage.setItem('aref_archived_ids', JSON.stringify(archivedIds));
+  }, [archivedIds]);
+
   // State for modals and active selections
   const [selectedDossier, setSelectedDossier] = useState<HousingDossier | null>(null);
   const [editingDossier, setEditingDossier] = useState<HousingDossier | null>(null);
@@ -55,6 +69,23 @@ function HousingWorkspace() {
           normalizeDirectorate(dossier.candidate.directionProvinciale) === normalizeDirectorate(currentUser.dpNameAr!)
         )
       : [];
+
+  const activeDossiers = visibleDossiers.filter((d) => !archivedIds.includes(d.id));
+  const archivedDossiers = visibleDossiers.filter((d) => archivedIds.includes(d.id));
+
+  const handleArchiveDossier = (id: string) => {
+    setArchivedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    if (selectedDossier?.id === id) setSelectedDossier(null);
+  };
+  const handleArchiveAllArchivable = () => {
+    const ids = activeDossiers.filter((d) => isArchivable(d)).map((d) => d.id);
+    setArchivedIds((prev) => [...new Set([...prev, ...ids])]);
+    setSelectedDossier(null);
+  };
+  const handleRestoreDossier = (id: string) => {
+    setArchivedIds((prev) => prev.filter((x) => x !== id));
+    if (selectedDossier?.id === id) setSelectedDossier(null);
+  };
 
   useEffect(() => {
     api
@@ -121,6 +152,7 @@ function HousingWorkspace() {
   const handleDeleteDossier = (id: string) => {
     if (window.confirm('هل أنت متأكد من حذف هذا الملف نهائياً من النظام؟')) {
       setDossiers((prev) => prev.filter((d) => d.id !== id));
+      setArchivedIds((prev) => prev.filter((x) => x !== id));
       if (selectedDossier?.id === id) setSelectedDossier(null);
       if (editingDossier?.id === id) setEditingDossier(null);
       if (auditDossier?.id === id) setAuditDossier(null);
@@ -213,7 +245,7 @@ function HousingWorkspace() {
       <DesktopWindowChrome
         isFullscreen={isFullscreen}
         onToggleFullscreen={handleToggleFullscreen}
-        dossiers={visibleDossiers}
+        dossiers={activeDossiers}
       />
 
       {/* Main Desktop Workspace with Sidebar & Content Canvas */}
@@ -227,7 +259,8 @@ function HousingWorkspace() {
               setEditingDossier(null);
             }
           }}
-          dossiers={visibleDossiers}
+          dossiers={activeDossiers}
+          archivedCount={archivedDossiers.length}
           onOpenUserSwitcher={() => setShowUserSwitcher(true)}
           onOpenNewDossier={() => {
             setEditingDossier(null);
@@ -241,7 +274,7 @@ function HousingWorkspace() {
             {/* View: Dossiers List */}
             {activeTab === 'dossiers' && (
               <DossierList
-                dossiers={visibleDossiers}
+                dossiers={activeDossiers}
                 onSelectDossier={(d) => setSelectedDossier(d)}
                 onOpenNewDossier={() => {
                   setEditingDossier(null);
@@ -257,6 +290,8 @@ function HousingWorkspace() {
                 }}
                 onPrintDocuments={(d) => handleOpenPrint(d, d.status === 'approved' ? 'accord_attribution' : 'demande')}
                 onDeleteDossier={handleDeleteDossier}
+                onArchiveDossier={handleArchiveDossier}
+                onArchiveAllArchivable={handleArchiveAllArchivable}
               />
             )}
 
@@ -275,7 +310,7 @@ function HousingWorkspace() {
             {/* View: Official Documents Generator & Printing */}
             {activeTab === 'documents' && (
               <DocumentGenerator
-                dossiers={visibleDossiers}
+                dossiers={activeDossiers}
                 selectedDossierId={printDossierId}
                 defaultDocType={defaultDocType}
               />
@@ -303,7 +338,7 @@ function HousingWorkspace() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {visibleDossiers.map((d) => (
+                  {activeDossiers.map((d) => (
                     <div
                       key={d.id}
                       className="bg-white p-5 rounded-xl border border-slate-200 hover:border-blue-400 transition-colors shadow-2xs space-y-3"
@@ -346,6 +381,16 @@ function HousingWorkspace() {
               />
             )}
 
+            {/* View: Archive of closed dossiers */}
+            {activeTab === 'archive' && (
+              <ArchiveView
+                archivedDossiers={archivedDossiers}
+                onRestore={handleRestoreDossier}
+                onSelectDossier={(d) => setSelectedDossier(d)}
+                onDeleteDossier={handleDeleteDossier}
+              />
+            )}
+
             {/* View: User Management View (4 Roles & DPs) */}
             {activeTab === 'users' && permissions.canManageUsers && <UserManagementView />}
 
@@ -355,7 +400,7 @@ function HousingWorkspace() {
             {/* View: Database & Backup */}
             {activeTab === 'database' && permissions.canAccessDatabaseSettings && (
               <DatabaseBackup
-                dossiers={visibleDossiers}
+                dossiers={activeDossiers}
                 onImportDossiers={(newOnes) => setDossiers(newOnes)}
                 onResetDossiers={() => setDossiers(INITIAL_DOSSIERS)}
               />

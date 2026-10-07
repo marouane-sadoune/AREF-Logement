@@ -8,6 +8,7 @@ import {
   Database,
   Building2,
   Users,
+  Archive,
   ChevronDown,
   ChevronUp,
   Globe2,
@@ -19,12 +20,13 @@ import {
 import { HousingDossier } from '../types/housing';
 import { useAuth } from '../context/AuthContext';
 
-export type ActiveTab = 'dossiers' | 'new_dossier' | 'documents' | 'audit' | 'regulations' | 'database' | 'users';
+export type ActiveTab = 'dossiers' | 'new_dossier' | 'documents' | 'audit' | 'regulations' | 'database' | 'users' | 'archive';
 
 interface SidebarProps {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
   dossiers: HousingDossier[];
+  archivedCount?: number;
   onOpenNewDossier: () => void;
   onOpenUserSwitcher: () => void;
 }
@@ -33,6 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   setActiveTab,
   dossiers,
+  archivedCount = 0,
   onOpenNewDossier,
   onOpenUserSwitcher
 }) => {
@@ -109,6 +112,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'دليل المذكرة الوزارية 40',
       sublabel: 'Cadre Juridique & Barème',
       icon: BookOpen
+    },
+    {
+      id: 'archive' as ActiveTab,
+      label: 'أرشيف الملفات المغلقة',
+      sublabel: 'Archive (clôturés > 1 an)',
+      icon: Archive,
+      badge: archivedCount > 0 ? archivedCount : undefined
     },
     ...(permissions.canAccessDatabaseSettings ? [{
       id: 'database' as ActiveTab,

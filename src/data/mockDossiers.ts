@@ -186,9 +186,9 @@ export const INITIAL_DOSSIERS: HousingDossier[] = [
       situationFamiliale: {
         present: true,
         marriageCert: true,
-        spouseAttestation: false,
+        spouseAttestation: true,
         childrenCertificates: true,
-        notes: 'الزوجة لا تعمل + عقود ازدياد طفلين'
+        notes: 'عقد زواج + شهادة عمل الزوجة + عقود ازدياد طفلين'
       },
       engagementHonneur: {
         present: true,
@@ -387,11 +387,11 @@ export const INITIAL_DOSSIERS: HousingDossier[] = [
       copieCIN: { present: true, isLegalized: true },
       attestationTravail: { present: true },
       situationFamiliale: {
-        present: false,
+        present: true,
         marriageCert: true,
-        spouseAttestation: false,
-        childrenCertificates: false,
-        notes: 'في انتظار إرفاق عقد ازدياد الابن'
+        spouseAttestation: true,
+        childrenCertificates: true,
+        notes: 'عقد زواج + شهادة عمل الزوجة + عقد ازدياد الابن'
       },
       engagementHonneur: { present: false, isLegalized: false, notes: 'قيد المصادقة على الإمضاء ببلدية الدريوش' },
       pvInstallation: { present: true, pvNumber: 'PV-DRI-2023/310' }
@@ -547,7 +547,7 @@ export const INITIAL_DOSSIERS: HousingDossier[] = [
       situationFamiliale: {
         present: true,
         marriageCert: true,
-        spouseAttestation: false,
+        spouseAttestation: true,
         childrenCertificates: true
       },
       engagementHonneur: { present: true, isLegalized: true },
@@ -632,7 +632,7 @@ export const INITIAL_DOSSIERS: HousingDossier[] = [
       situationFamiliale: {
         present: true,
         marriageCert: true,
-        spouseAttestation: false,
+        spouseAttestation: true,
         childrenCertificates: true
       },
       engagementHonneur: { present: true, isLegalized: true },
