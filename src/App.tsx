@@ -112,7 +112,14 @@ function HousingWorkspace() {
 
     if (existsIndex < 0) {
       try {
-        const created = await api.createDossier(saved);
+        // The dossier is always created on behalf of the DP agent of its province
+        const dpAgent = currentUser.role === 'dp_agent'
+          ? currentUser
+          : null;
+        const acteurLabel = dpAgent
+          ? `${dpAgent.fullName} (${dpAgent.title})`
+          : `ممثل المديرية الإقليمية - ${saved.candidate.directionProvinciale}`;
+        const created = await api.createDossier(saved, acteurLabel);
         dossierId = created.id;
         setDossiers((prev) => [created, ...prev]);
       } catch (e) {

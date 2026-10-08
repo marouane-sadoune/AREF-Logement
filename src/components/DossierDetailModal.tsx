@@ -18,6 +18,7 @@ import {
 import { HousingDossier } from '../types/housing';
 import { DocumentChecklistView } from './DocumentChecklistView';
 import { StatusTimeline } from './StatusTimeline';
+import { actionTitle } from '../utils/auditLabel';
 
 interface DossierDetailModalProps {
   dossier: HousingDossier;
@@ -272,13 +273,33 @@ export const DossierDetailModal: React.FC<DossierDetailModalProps> = ({
               <h3 className="text-xs font-bold text-slate-800">المراحل والقرارات المسجلة على هذا الملف:</h3>
               <div className="space-y-2">
                 {dossier.auditHistory.map((item, idx) => (
-                  <div key={idx} className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-900">{item.decision}</span>
-                      <span className="font-mono text-[10px] text-slate-400">{item.date}</span>
+                  <div key={idx} className="bg-white border border-slate-200 rounded-lg p-3 text-xs space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md border ${
+                        item.stage === 'creation' ? 'bg-slate-100 text-slate-700 border-slate-200'
+                          : item.stage === 'submission_dp' ? 'bg-purple-50 text-purple-800 border-purple-200'
+                          : item.stage === 'audit_dp' ? 'bg-amber-50 text-amber-800 border-amber-200'
+                          : item.stage === 'transmission_aref' ? 'bg-blue-50 text-blue-800 border-blue-200'
+                          : item.stage === 'commission_aref' ? 'bg-indigo-50 text-indigo-800 border-indigo-200'
+                          : item.stage === 'final_decision'
+                            ? (item.decision || '').toLowerCase().match(/reject|refus|رفض/)
+                              ? 'bg-rose-50 text-rose-800 border-rose-200'
+                              : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                          : 'bg-slate-100 text-slate-700 border-slate-200'
+                      }`}>
+                        {actionTitle(item)}
+                      </span>
+                      <span className="flex items-center gap-1 font-mono text-[10px] text-slate-400">
+                        {String(item.date).slice(0, 16).replace('T', ' ')}
+                        <Clock className="w-3 h-3" />
+                      </span>
                     </div>
-                    <div className="text-slate-600">{item.comment}</div>
-                    <div className="text-[10px] text-slate-400 pt-0.5">بواسطة: {item.actor}</div>
+                    <div className="font-bold text-slate-900 leading-relaxed">{item.comment || actionTitle(item)}</div>
+                    {item.comment && <div className="text-slate-500 text-[11px] font-mono">{item.decision}</div>}
+                    <div className="text-[11px] text-slate-500 flex items-center gap-1 pt-0.5">
+                      <User className="w-3 h-3 text-blue-500" />
+                      <span>المستخدم المسؤول: <strong className="text-slate-700">{item.actor}</strong></span>
+                    </div>
                   </div>
                 ))}
               </div>

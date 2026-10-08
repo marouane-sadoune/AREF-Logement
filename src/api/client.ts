@@ -47,10 +47,13 @@ export const SUPPORTING_DOC_KEYS: Record<string, string> = {
 };
 
 function inferAuditStage(decision: string, index: number): string {
-  if (index === 0 || decision.includes('Creation') || decision.includes('ايداع')) return 'creation';
-  if (decision.includes('تدقيق')) return 'audit_dp';
-  if (decision.includes('احالة') || decision.includes('ارسال')) return 'transmission_aref';
-  if (decision.includes('المصادقة') || decision.includes('الترخيص')) return 'final_decision';
+  const d = (decision || '').toLowerCase();
+  if (d.includes('submitted_dp') || d.includes('إيداع') || d.includes('استلام')) return 'submission_dp';
+  if (d.includes('transmitted_aref') || d.includes('احالة') || d.includes('ارسال') || d.includes('إحالة')) return 'transmission_aref';
+  if (d.includes('commission') || d.includes('لجنة')) return 'commission_aref';
+  if (d.includes('approved') || d.includes('rejected') || d.includes('المصادقة') || d.includes('الترخيص') || d.includes('رفض')) return 'final_decision';
+  if (d.includes('under_review_dp') || d.includes('تدقيق') || d.includes('موافقة')) return 'audit_dp';
+  if (index === 0 || d.includes('création') || d.includes('creation')) return 'creation';
   return 'audit_dp';
 }
 
@@ -224,10 +227,10 @@ export async function fetchDossier(id: string): Promise<HousingDossier> {
   return mapApiToDossier(body);
 }
 
-export async function createDossier(dossier: HousingDossier): Promise<HousingDossier> {
+export async function createDossier(dossier: HousingDossier, acteur?: string): Promise<HousingDossier> {
   const body = await request('/assignments', {
     method: 'POST',
-    body: JSON.stringify(buildCreatePayload(dossier)),
+    body: JSON.stringify({ ...buildCreatePayload(dossier), acteur, commentaire: `إيداع الملف من طرف ${acteur || ''}` }),
   });
   return mapApiToDossier(body.data);
 }

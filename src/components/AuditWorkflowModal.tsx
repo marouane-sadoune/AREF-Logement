@@ -23,6 +23,7 @@ import { HousingDossier, DossierStatus } from '../types/housing';
 import { useAuth } from '../context/AuthContext';
 import { getDossierDocumentUrl } from '../api/client';
 import { DocumentPreviewCard, DocumentPreviewCardData } from './DocumentPreviewCard';
+import { actionTitle } from '../utils/auditLabel';
 
 interface AuditWorkflowModalProps {
   dossier: HousingDossier;
@@ -522,15 +523,33 @@ export const AuditWorkflowModal: React.FC<AuditWorkflowModalProps> = ({
           {dossier.auditHistory && dossier.auditHistory.length > 0 && (
             <div className="space-y-2">
               <div className="text-xs font-bold text-slate-800">سجل الإجراءات والتدقيق السابق على هذا الملف:</div>
-              <div className="max-h-36 overflow-y-auto space-y-1.5 border border-slate-200 p-2.5 rounded-lg bg-slate-50/50">
+              <div className="max-h-64 overflow-y-auto space-y-2 border border-slate-200 p-2.5 rounded-lg bg-slate-50/50">
                 {dossier.auditHistory.map((item, i) => (
-                  <div key={i} className="text-[11px] bg-white p-2 rounded border border-slate-100 flex items-start justify-between gap-2">
-                    <div>
-                      <div className="font-semibold text-slate-800">{item.decision}</div>
-                      <div className="text-slate-500">{item.comment}</div>
+                  <div key={i} className="bg-white p-3 rounded-lg border border-slate-200 text-xs space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md border ${
+                        item.stage === 'creation' ? 'bg-slate-100 text-slate-700 border-slate-200'
+                          : item.stage === 'submission_dp' ? 'bg-purple-50 text-purple-800 border-purple-200'
+                          : item.stage === 'audit_dp' ? 'bg-amber-50 text-amber-800 border-amber-200'
+                          : item.stage === 'transmission_aref' ? 'bg-blue-50 text-blue-800 border-blue-200'
+                          : item.stage === 'commission_aref' ? 'bg-indigo-50 text-indigo-800 border-indigo-200'
+                          : item.stage === 'final_decision'
+                            ? (item.decision || '').toLowerCase().match(/reject|refus|رفض/)
+                              ? 'bg-rose-50 text-rose-800 border-rose-200'
+                              : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                          : 'bg-slate-100 text-slate-700 border-slate-200'
+                      }`}>
+                        {actionTitle(item)}
+                      </span>
+                      <span className="font-mono text-[10px] text-slate-400">
+                        {String(item.date).slice(0, 16).replace('T', ' ')}
+                      </span>
                     </div>
-                    <div className="text-left text-[10px] text-slate-400 shrink-0 font-mono">
-                      {item.date}
+                    <div className="font-bold text-slate-900 leading-relaxed">{item.comment || actionTitle(item)}</div>
+                    {item.comment && <div className="text-slate-500 text-[11px] font-mono">{item.decision}</div>}
+                    <div className="text-[11px] text-slate-500 pt-0.5 flex items-center gap-1">
+                      <UserCheck className="w-3 h-3 text-blue-500" />
+                      المستخدم المسؤول: <strong className="text-slate-700">{item.actor}</strong>
                     </div>
                   </div>
                 ))}
