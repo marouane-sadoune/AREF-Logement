@@ -17,6 +17,7 @@ import { UserSwitcherModal } from './components/UserSwitcherModal';
 import { UserManagementView } from './components/UserManagementView';
 import { SignInView } from './components/SignInView';
 import { ArchiveView } from './components/ArchiveView';
+import { CompareView } from './components/CompareView';
 import { isArchivable } from './utils/archive';
 import { HousingDossier, DossierStatus } from './types/housing';
 import { INITIAL_DOSSIERS } from './data/mockDossiers';
@@ -390,6 +391,9 @@ function HousingWorkspace() {
                 onOpenApprovalLetter={(d) => handleOpenPrint(d, 'accord_attribution')}
               />
             )}
+
+            {/* View: Compare candidates on the same establishment */}
+            {activeTab === 'compare' && <CompareView dossiers={activeDossiers} />}
 
             {/* View: Archive of closed dossiers */}
             {activeTab === 'archive' && (

@@ -54,6 +54,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
   // Candidate State
   const [candidate, setCandidate] = useState<CandidateInfo>(
     initialDossier?.candidate || {
+      gender: undefined,
       fullNameAr: '',
       fullNameFr: '',
       cin: '',
@@ -244,9 +245,24 @@ export const DossierForm: React.FC<DossierFormProps> = ({
       return;
     }
 
+    if (!candidate.commune.trim()) {
+      alert('يرجى تحديد المدينة \\ القرية التي تتواجد بها المؤسسة');
+      setActiveStep(1);
+      return;
+    }
+
     if (housingRequest.targetEtablissement.trim() !== candidate.currentEtablissement.trim()) {
       alert('يجب أن يكون السكن المطلوب داخل نفس المؤسسة التي يعمل بها الموظف');
       setActiveStep(3);
+      return;
+    }
+
+    if (
+      !candidate.currentEtablissement.trim() ||
+      candidate.currentEtablissement.trim() === candidate.fullNameAr.trim()
+    ) {
+      alert('المؤسسة التعليمية التي يوجد بها السكن يجب أن تكون اسم المؤسسة، وليس اسم المترشح. يرجى تصحيح حقل "مقر العمل الحالي" في الخطوة 1.');
+      setActiveStep(1);
       return;
     }
 
@@ -387,6 +403,18 @@ export const DossierForm: React.FC<DossierFormProps> = ({
               </div>
 
               <div>
+                <label className="block font-semibold text-slate-700 mb-1">الجنس *</label>
+                <select
+                  value={candidate.gender || 'male'}
+                  onChange={(e) => setCandidate({ ...candidate, gender: e.target.value as 'male' | 'female' })}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 focus:bg-white"
+                >
+                  <option value="male">ذكر</option>
+                  <option value="female">أنثى</option>
+                </select>
+              </div>
+
+              <div>
                 <label className="block font-semibold text-slate-700 mb-1">رقم بطاقة التعريف الوطنية (CIN) *</label>
                 <input
                   type="text"
@@ -484,6 +512,18 @@ export const DossierForm: React.FC<DossierFormProps> = ({
                   placeholder="مثال: الثانوية التأهيلية ابن عباد"
                   value={candidate.currentEtablissement}
                   onChange={(e) => setCandidate({ ...candidate, currentEtablissement: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">المدينة \ القرية التي تتواجد بها المؤسسة *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="مثال: وجدة، الناظور، بركان..."
+                  value={candidate.commune}
+                  onChange={(e) => setCandidate({ ...candidate, commune: e.target.value })}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 focus:bg-white"
                 />
               </div>

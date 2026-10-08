@@ -81,6 +81,7 @@ export function mapApiToDossier(api: any): HousingDossier {
       fullNameAr: c.nom_ar || '',
       fullNameFr: c.nom_fr || '',
       cin: c.cin || '',
+      gender: c.gender === 'female' ? 'female' : c.gender === 'male' ? 'male' : undefined,
       ppr: c.ppr || '',
       phone: c.telephone || '',
       email: c.email || '',
@@ -169,6 +170,7 @@ function buildCreatePayload(dossier: HousingDossier) {
     candidat: {
       ppr: c.ppr,
       cin: c.cin,
+      gender: c.gender,
       nom_ar: c.fullNameAr,
       nom_fr: c.fullNameFr,
       telephone: c.phone,

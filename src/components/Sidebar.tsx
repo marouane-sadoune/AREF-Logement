@@ -9,6 +9,7 @@ import {
   Building2,
   Users,
   Archive,
+  Scale,
   ChevronDown,
   ChevronUp,
   Globe2,
@@ -20,7 +21,7 @@ import {
 import { HousingDossier } from '../types/housing';
 import { useAuth } from '../context/AuthContext';
 
-export type ActiveTab = 'dossiers' | 'new_dossier' | 'documents' | 'audit' | 'regulations' | 'database' | 'users' | 'archive';
+export type ActiveTab = 'dossiers' | 'new_dossier' | 'documents' | 'audit' | 'regulations' | 'database' | 'users' | 'archive' | 'compare';
 
 interface SidebarProps {
   activeTab: ActiveTab;
@@ -112,6 +113,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'دليل المذكرة الوزارية 40',
       sublabel: 'Cadre Juridique & Barème',
       icon: BookOpen
+    },
+    {
+      id: 'compare' as ActiveTab,
+      label: 'مقارنة المترشحين',
+      sublabel: 'Comparaison (même établissement)',
+      icon: Scale,
+      badge: undefined
     },
     {
       id: 'archive' as ActiveTab,

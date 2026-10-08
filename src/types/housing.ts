@@ -37,6 +37,7 @@ export interface CandidateInfo {
   fullNameAr: string;
   fullNameFr: string;
   cin: string;
+  gender?: 'male' | 'female';
   ppr: string; // Numéro de SOM / رقم التأجير
   phone: string;
   email: string;

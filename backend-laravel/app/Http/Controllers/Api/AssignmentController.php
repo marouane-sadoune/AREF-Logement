@@ -60,6 +60,7 @@ class AssignmentController extends Controller
             'candidat.administration_conjoint' => 'nullable|string|max:150',
             'candidat.ppr_conjoint' => 'nullable|string|max:20',
             'candidat.nombre_enfants' => 'sometimes|integer|min:0',
+            'candidat.gender' => 'nullable|in:male,female',
 
             'type_logement' => 'required|in:fonction,administratif',
             'etablissement_cible' => 'required|string|max:150',
