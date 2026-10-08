@@ -112,7 +112,7 @@ export const DossierDetailModal: React.FC<DossierDetailModalProps> = ({
                 : 'text-slate-600 hover:bg-slate-200'
             }`}
           >
-            بيانات المترشح والسكن
+            {dossier.candidate.gender === 'female' ? 'بيانات المترشحة والسكن' : 'بيانات المترشح والسكن'}
           </button>
 
           <button
@@ -173,12 +173,12 @@ export const DossierDetailModal: React.FC<DossierDetailModalProps> = ({
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
                 <h3 className="font-bold text-slate-900 flex items-center gap-2 text-sm">
                   <Users className="w-4 h-4 text-emerald-600" />
-                  <span>الوضع العائلي (Situation Familiale)</span>
+                  <span>{dossier.candidate.gender === 'female' ? 'الوضع العائلي للمترشحة (Situation Familiale)' : 'الوضع العائلي للمترشح (Situation Familiale)'}</span>
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   <div><span className="text-slate-500">الحالة العائلية:</span> <strong>{situationFamiliale.maritalStatus === 'marie' ? 'متزوج(ة)' : 'عازب(ة)'}</strong></div>
-                  <div><span className="text-slate-500">اسم الزوج(ة):</span> <strong>{situationFamiliale.spouseName || 'غير مسجل'}</strong></div>
-                  <div><span className="text-slate-500">وظيفة الزوج(ة):</span> <strong>{situationFamiliale.spouseIsPublicOfficial ? (situationFamiliale.spouseAdministration || 'موظف عمومي') : 'لا يمارس وظيفة عمومية'}</strong></div>
+                  <div><span className="text-slate-500">{dossier.candidate.gender === 'female' ? 'اسم الزوج:' : 'اسم الزوجة:'}</span> <strong>{situationFamiliale.spouseName || 'غير مسجل'}</strong></div>
+                  <div><span className="text-slate-500">{dossier.candidate.gender === 'female' ? 'وظيفة الزوج:' : 'وظيفة الزوجة:'}</span> <strong>{situationFamiliale.spouseIsPublicOfficial ? (situationFamiliale.spouseAdministration || (dossier.candidate.gender === 'female' ? 'موظف عمومي' : 'موظفة عمومية')) : (dossier.candidate.gender === 'female' ? 'لا يمارس وظيفة عمومية' : 'لا تمارس وظيفة عمومية')}</strong></div>
                   <div><span className="text-slate-500">عدد الأطفال المعالين:</span> <strong className="font-mono">{situationFamiliale.childrenCount} أطفال</strong></div>
                 </div>
               </div>

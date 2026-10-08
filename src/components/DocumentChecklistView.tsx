@@ -241,7 +241,7 @@ export const DocumentChecklistView: React.FC<DocumentChecklistViewProps> = ({
                         </span>
                         {dossier.situationFamiliale.spouseIsPublicOfficial && (
                           <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-800">
-                            الزوج(ة) موظف: {dossier.situationFamiliale.spouseAdministration || 'قطاع عام'}
+                            {dossier.candidate.gender === 'female' ? 'الزوج موظف:' : 'الزوجة موظفة:'} {dossier.situationFamiliale.spouseAdministration || 'قطاع عام'}
                           </span>
                         )}
                       </div>
@@ -296,6 +296,20 @@ export const DocumentChecklistView: React.FC<DocumentChecklistViewProps> = ({
                         fileUrl: ('fileName' in doc.data && doc.data.fileName)
                           ? getDossierDocumentUrl(dossier.id, doc.id)
                           : undefined,
+                        files: doc.id === 'situationFamiliale' ? [
+                          dossier.documents.situationFamiliale.marriageCertFileName && {
+                            name: dossier.documents.situationFamiliale.marriageCertFileName,
+                            url: getDossierDocumentUrl(dossier.id, 'situationFamilialeContratMariage'),
+                          },
+                          dossier.documents.situationFamiliale.spouseAttestationFileName && {
+                            name: dossier.documents.situationFamiliale.spouseAttestationFileName,
+                            url: getDossierDocumentUrl(dossier.id, 'situationFamilialeAttestationConjoint'),
+                          },
+                          dossier.documents.situationFamiliale.childrenCertificatesFileName && {
+                            name: dossier.documents.situationFamiliale.childrenCertificatesFileName,
+                            url: getDossierDocumentUrl(dossier.id, 'situationFamilialeEnfants'),
+                          },
+                        ].filter(Boolean) as { name: string; url?: string }[] : undefined,
                       })}
                       className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >

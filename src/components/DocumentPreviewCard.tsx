@@ -30,6 +30,8 @@ export interface DocumentPreviewCardData {
   date?: string;
   notes?: string;
   fileUrl?: string;
+  // For composite documents (e.g. الوضع العائلي = 3 sub-documents)
+  files?: { name: string; url?: string }[];
 }
 
 interface Props {
@@ -407,7 +409,21 @@ export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
               <span className="dp-meta-value">{data.date}</span>
             </div>
           )}
-          {!data.fileName && !data.date && (
+          {data.files && data.files.length > 0 && (
+            <div className="dp-meta-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 4 }}>
+              {data.files.map((f, i) => (
+                <div key={i} className="flex items-center justify-between gap-2">
+                  <span className="dp-meta-value truncate" style={{ fontFamily: 'monospace' }}>📄 {f.name}</span>
+                  {f.url && (
+                    <a href={f.url} target="_blank" rel="noreferrer" className="text-blue-600 font-bold">
+                      معاينة
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          {!data.fileName && !data.date && !(data.files && data.files.length) && (
             <div className="dp-meta-row" style={{ color: '#cbd5e1' }}>
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
               <span style={{ fontSize: 11 }}>لم يُرفق أي ملف رقمي بعد لهذه الوثيقة</span>
@@ -438,6 +454,10 @@ export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
                 تحميل
               </a>
             </>
+          ) : (data.files && data.files.length > 0) ? (
+            <span className="dp-no-file" style={{ color: '#059669' }}>
+              ✓ {data.files.length} وثائق مرفقة — استخدم روابط المعاينة أعلاه
+            </span>
           ) : (
             <span className="dp-no-file">
               <AlertTriangle className="w-4 h-4 text-amber-400" />

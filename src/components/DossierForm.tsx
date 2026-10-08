@@ -598,7 +598,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
             <div className="border-b border-slate-200 pb-2">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <Users className="w-4 h-4 text-emerald-600" />
-                <span>2. الوضع العائلي (Situation Familiale) والوثائق المثبتة</span>
+                <span>{candidate.gender === 'female' ? '2. الوضع العائلي للمترشحة (Situation Familiale) والوثائق المثبتة' : '2. الوضع العائلي للمترشح (Situation Familiale) والوثائق المثبتة'}</span>
               </h3>
               <p className="text-xs text-slate-500 mt-1">
                 حسب المذكرة 40، يمنح المتزوج 4 نقط، ويمنح نقطتان عن كل طفل معال في حدود 4 أطفال.
@@ -636,10 +636,10 @@ export const DossierForm: React.FC<DossierFormProps> = ({
               {situationFamiliale.maritalStatus === 'marie' && (
                 <>
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">اسم ونسب الزوج(ة)</label>
+                    <label className="block font-semibold text-slate-700 mb-1">{candidate.gender === 'female' ? 'اسم ونسب الزوج' : 'اسم ونسب الزوجة'}</label>
                     <input
                       type="text"
-                      placeholder="الاسم الكامل للزوج أو الزوجة"
+                      placeholder={candidate.gender === 'female' ? 'الاسم الكامل للزوج' : 'الاسم الكامل للزوجة'}
                       value={situationFamiliale.spouseName}
                       onChange={(e) => setSituationFamiliale({ ...situationFamiliale, spouseName: e.target.value })}
                       className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg"
@@ -647,7 +647,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
                   </div>
 
                   <div className="space-y-2">
-                    <label className="block font-semibold text-slate-700">هل الزوج(ة) موظف(ة) عمومي(ة)؟</label>
+                    <label className="block font-semibold text-slate-700">{candidate.gender === 'female' ? 'هل الزوج موظف عمومي؟' : 'هل الزوجة موظفة عمومية؟'}</label>
                     <div className="flex items-center gap-4 pt-1">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
@@ -656,7 +656,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
                           checked={situationFamiliale.spouseIsPublicOfficial}
                           onChange={() => setSituationFamiliale({ ...situationFamiliale, spouseIsPublicOfficial: true })}
                         />
-                        <span>نعم (موظف بالقطاع العام)</span>
+                        <span>نعم ({candidate.gender === 'female' ? 'موظف بالقطاع العام' : 'موظفة بالقطاع العام'})</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input

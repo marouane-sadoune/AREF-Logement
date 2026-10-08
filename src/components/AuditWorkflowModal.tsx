@@ -356,7 +356,12 @@ export const AuditWorkflowModal: React.FC<AuditWorkflowModalProps> = ({
                         fileName: document.fileName,
                         date: ('date' in document ? (document as any).date : undefined),
                         notes: document.notes,
-                        fileUrl: document.fileName ? getDossierDocumentUrl(dossier.id, key) : undefined,
+                        fileUrl: key !== 'situationFamiliale' && document.fileName ? getDossierDocumentUrl(dossier.id, key) : undefined,
+                        files: key === 'situationFamiliale' ? [
+                          (document as any).marriageCertFileName && { name: (document as any).marriageCertFileName, url: getDossierDocumentUrl(dossier.id, 'situationFamilialeContratMariage') },
+                          (document as any).spouseAttestationFileName && { name: (document as any).spouseAttestationFileName, url: getDossierDocumentUrl(dossier.id, 'situationFamilialeAttestationConjoint') },
+                          (document as any).childrenCertificatesFileName && { name: (document as any).childrenCertificatesFileName, url: getDossierDocumentUrl(dossier.id, 'situationFamilialeEnfants') },
+                        ].filter(Boolean) as { name: string; url?: string }[] : undefined,
                       });
                     }}
                     className="inline-flex shrink-0 items-center gap-1 rounded px-2 py-1 font-semibold text-blue-700 hover:bg-blue-50 hover:text-blue-900 cursor-pointer"
