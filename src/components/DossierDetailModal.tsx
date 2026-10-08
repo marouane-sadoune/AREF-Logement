@@ -64,17 +64,7 @@ export const DossierDetailModal: React.FC<DossierDetailModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {dossier.status === 'approved' && onNavigateToDocumentGenerator && (
-              <button
-                onClick={() => onNavigateToDocumentGenerator('accord_attribution')}
-                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-                title="معاينة وطباعة رسالة الموافقة الرسمية الصادرة عن مديرة الأكاديمية"
-              >
-                <Printer className="w-3.5 h-3.5" />
-                <span>رسالة الموافقة (AREF)</span>
-              </button>
-            )}
-
+            {/* "رسالة الموافقة (AREF)" quick button removed — use طباعة الوثائق instead */}
             <button
               onClick={() => onPrintDocuments(dossier)}
               className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"

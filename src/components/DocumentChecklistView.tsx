@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { 
   FileCheck, 
-  FileText, 
-  CheckCircle2, 
+  FileText,
+  CheckCircle2,
   XCircle, 
-  Upload, 
   Eye, 
   Stamp, 
   Paperclip, 
@@ -16,6 +15,7 @@ import {
 } from 'lucide-react';
 import { DocumentPreviewCard, DocumentPreviewCardData } from './DocumentPreviewCard';
 import { HousingDossier } from '../types/housing';
+import { getDossierDocumentUrl } from '../api/client';
 
 interface DocumentChecklistViewProps {
   dossier: HousingDossier;
@@ -28,7 +28,6 @@ export const DocumentChecklistView: React.FC<DocumentChecklistViewProps> = ({
   onUpdateDossier,
   onNavigateToDocumentGenerator
 }) => {
-  const [activeUploadDoc, setActiveUploadDoc] = useState<string | null>(null);
   const [previewDoc, setPreviewDoc] = useState<DocumentPreviewCardData | null>(null);
 
   const toggleDocPresence = (docKey: keyof typeof dossier.documents) => {
@@ -57,25 +56,6 @@ export const DocumentChecklistView: React.FC<DocumentChecklistViewProps> = ({
         }
       };
       onUpdateDossier(updated);
-    }
-  };
-
-  const handleSimulateUpload = (docKey: string, fileName: string) => {
-    if (docKey === 'demandeManuscrite' || docKey === 'copieCIN' || docKey === 'attestationTravail' || docKey === 'engagementHonneur' || docKey === 'pvInstallation') {
-      const updated = {
-        ...dossier,
-        documents: {
-          ...dossier.documents,
-          [docKey]: {
-            ...dossier.documents[docKey],
-            present: true,
-            fileName: fileName || `Document_${docKey}_Attache.pdf`,
-            date: new Date().toISOString().split('T')[0]
-          }
-        }
-      };
-      onUpdateDossier(updated);
-      setActiveUploadDoc(null);
     }
   };
 
@@ -313,7 +293,9 @@ export const DocumentChecklistView: React.FC<DocumentChecklistViewProps> = ({
                         fileName: ('fileName' in doc.data ? doc.data.fileName : undefined),
                         date: ('date' in doc.data ? doc.data.date : undefined),
                         notes: ('notes' in doc.data ? doc.data.notes : undefined),
-                        fileUrl: undefined,
+                        fileUrl: ('fileName' in doc.data && doc.data.fileName)
+                          ? getDossierDocumentUrl(dossier.id, doc.id)
+                          : undefined,
                       })}
                       className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
@@ -342,50 +324,8 @@ export const DocumentChecklistView: React.FC<DocumentChecklistViewProps> = ({
                       </button>
                     )}
 
-                    <button
-                      onClick={() => setActiveUploadDoc(activeUploadDoc === doc.id ? null : doc.id)}
-                      className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                    >
-                      <Upload className="w-3.5 h-3.5 text-blue-600" />
-                      <span>إرفاق نسخة ممسوحة ضوئياً</span>
-                    </button>
                   </div>
                 </div>
-
-                {/* Simulated file upload drawer */}
-                {activeUploadDoc === doc.id && (
-                  <div className="mt-3 p-3 bg-blue-50/50 rounded-lg border border-blue-200 space-y-2">
-                    <div className="flex items-center justify-between text-xs text-blue-900 font-semibold">
-                      <span>إرفاق وثيقة ممسوحة رقمياً (PDF / JPG)</span>
-                      <button 
-                        onClick={() => setActiveUploadDoc(null)}
-                        className="text-slate-400 hover:text-slate-600 text-xs"
-                      >
-                        إلغاء
-                      </button>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="file"
-                        id={`file-input-${doc.id}`}
-                        className="text-xs text-slate-600 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            handleSimulateUpload(doc.id, file.name);
-                          }
-                        }}
-                      />
-                      <button
-                        onClick={() => handleSimulateUpload(doc.id, `Scan_Certifie_${doc.id}.pdf`)}
-                        className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium cursor-pointer"
-                      >
-                        إرفاق نموذج افتراضي
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
             );
           })}
