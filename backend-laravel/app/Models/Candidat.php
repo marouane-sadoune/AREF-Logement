@@ -13,6 +13,12 @@ class Candidat extends Model
 
     public $timestamps = false;
 
+    protected $casts = [
+        'conjoint_fonctionnaire' => 'boolean',
+        'milieu_rural' => 'boolean',
+        'franchise_rurale' => 'boolean',
+    ];
+
     public function demandesLogement(): HasMany
     {
         return $this->hasMany(DemandeLogement::class, 'candidat_ppr', 'ppr');

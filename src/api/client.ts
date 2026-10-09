@@ -96,6 +96,9 @@ export function mapApiToDossier(api: any): HousingDossier {
       commune: c.commune || '',
       directionProvinciale: c.direction_provinciale || '',
       aref: c.aref || '',
+      performanceRating: (c.merdoudia || undefined) as any,
+      isRuralArea: !!c.milieu_rural,
+      isRuralBranch: !!c.franchise_rurale,
     },
     situationFamiliale: {
       maritalStatus: c.situation_familiale || 'celibataire',
@@ -138,6 +141,8 @@ export function mapApiToDossier(api: any): HousingDossier {
       maritalPts: b.pts_situation_familiale ?? 0,
       childrenPts: b.pts_enfants ?? 0,
       responsibilityBonus: b.bonus_responsabilite ?? 0,
+      performancePts: b.pts_merdoudia ?? 0,
+      ruralBonusPts: b.pts_milieu_rural ?? 0,
       totalPts: b.total_points ?? 0,
     },
     auditHistory: (api.historique || []).map((h: any, i: number) => ({
@@ -192,6 +197,9 @@ function buildCreatePayload(dossier: HousingDossier) {
       administration_conjoint: f.spouseAdministration,
       ppr_conjoint: f.spousePPR,
       nombre_enfants: f.childrenCount,
+      merdoudia: c.performanceRating ?? null,
+      milieu_rural: !!c.isRuralArea,
+      franchise_rurale: !!c.isRuralBranch,
     },
     type_logement: h.housingType,
     etablissement_cible: h.targetEtablissement,
@@ -208,6 +216,8 @@ function buildCreatePayload(dossier: HousingDossier) {
     pts_situation_familiale: bareme.maritalPts,
     pts_enfants: bareme.childrenPts,
     bonus_responsabilite: bareme.responsibilityBonus,
+    pts_merdoudia: bareme.performancePts ?? 0,
+    pts_milieu_rural: bareme.ruralBonusPts ?? 0,
     documents: {
       demande_manuscrite: docs.demandeManuscrite.present,
       copie_cin: docs.copieCIN.present,

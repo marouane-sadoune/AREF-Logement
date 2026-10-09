@@ -61,6 +61,9 @@ class AssignmentController extends Controller
             'candidat.ppr_conjoint' => 'nullable|string|max:20',
             'candidat.nombre_enfants' => 'sometimes|integer|min:0',
             'candidat.gender' => 'nullable|in:male,female',
+            'candidat.merdoudia' => 'nullable|in:excellent,good,satisfactory,below',
+            'candidat.milieu_rural' => 'sometimes|boolean',
+            'candidat.franchise_rurale' => 'sometimes|boolean',
 
             'type_logement' => 'required|in:fonction,administratif',
             'etablissement_cible' => 'required|string|max:150',
@@ -80,6 +83,8 @@ class AssignmentController extends Controller
             'pts_situation_familiale' => 'sometimes|integer|min:0',
             'pts_enfants' => 'sometimes|integer|min:0',
             'bonus_responsabilite' => 'sometimes|integer|min:0',
+            'pts_merdoudia' => 'sometimes|integer|min:0',
+            'pts_milieu_rural' => 'sometimes|integer|min:0',
 
             'documents.demande_manuscrite' => 'sometimes|boolean',
             'documents.copie_cin' => 'sometimes|boolean',
@@ -96,6 +101,8 @@ class AssignmentController extends Controller
             'pts_situation_familiale',
             'pts_enfants',
             'bonus_responsabilite',
+            'pts_merdoudia',
+            'pts_milieu_rural',
         ];
         $scores = collect($scoreFields)->mapWithKeys(fn(string $field) => [
             $field => $validated[$field] ?? 0,

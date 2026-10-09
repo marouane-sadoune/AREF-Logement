@@ -20,6 +20,8 @@ class BaremeDetail extends Model
         'pts_situation_familiale' => 'integer',
         'pts_enfants' => 'integer',
         'bonus_responsabilite' => 'integer',
+        'pts_merdoudia' => 'integer',
+        'pts_milieu_rural' => 'integer',
         'total_points' => 'integer',
     ];
 

@@ -2,6 +2,16 @@ export type MaritalStatus = 'celibataire' | 'marie' | 'divorce' | 'veuf';
 
 export type HousingType = 'fonction' | 'administratif';
 
+// تقييم مردودية الموظف (يُعبَّأ من طرف الرئيس المباشر) - المذكرة 40
+export type PerformanceRating = 'excellent' | 'good' | 'satisfactory' | 'below';
+
+export const PERFORMANCE_RATING_LABELS: Record<PerformanceRating, string> = {
+  excellent: 'جيد جدا',
+  good: 'جيد',
+  satisfactory: 'مستحسن',
+  below: 'دون المستحسن',
+};
+
 export type DossierStatus = 
   | 'draft'              // مسودة
   | 'submitted_dp'        // مودع بالمديرية الإقليمية
@@ -52,6 +62,9 @@ export interface CandidateInfo {
   commune: string;
   directionProvinciale: string; // المديرية الإقليمية (DP)
   aref: string; // الأكاديمية الجهوية للتربية والتكوين (AREF)
+  performanceRating?: PerformanceRating; // المردودية (المعيار 6)
+  isRuralArea?: boolean; // المؤسسة بالوسط القروي (المعيار 7)
+  isRuralBranch?: boolean; // مدرس بفرعية (المعيار 7)
 }
 
 export interface SituationFamilialeInfo {
@@ -89,6 +102,8 @@ export interface BaremePoints {
   maritalPts: number;
   childrenPts: number;
   responsibilityBonus: number;
+  performancePts?: number;   // المردودية (المعيار 6)
+  ruralBonusPts?: number;    // الوسط القروي (المعيار 7)
   totalPts: number;
 }
 
