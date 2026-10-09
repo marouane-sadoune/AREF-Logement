@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AssignmentController;
 use App\Http\Controllers\Api\DocumentController;
+use App\Http\Controllers\Api\EvictionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -25,5 +26,11 @@ Route::prefix('v1')->group(function () {
     // رفع وتفقد الوثائق الست الإلزامية المكونة لملف الطلب (Dossier de Demande)
     Route::post('/assignments/{id}/documents/{docKey}', [DocumentController::class, 'uploadSupportingDocument']);
     Route::get('/assignments/{id}/documents/{docKey}', [DocumentController::class, 'downloadSupportingDocument']);
+
+    // مساطر إفراغ المساكن الإدارية والوظيفية (المحور 4 من المذكرة 40)
+    Route::get('/evictions', [EvictionController::class, 'index']);
+    Route::post('/evictions', [EvictionController::class, 'store']);
+    Route::patch('/evictions/{id}', [EvictionController::class, 'update']);
+    Route::delete('/evictions/{id}', [EvictionController::class, 'destroy']);
 
 });

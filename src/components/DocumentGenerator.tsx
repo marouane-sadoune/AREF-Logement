@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { HousingDossier } from '../types/housing';
 import { ArefOfficialHeader } from './ArefOfficialHeader';
+import { OfficialFormSheet } from './OfficialFormSheets';
 
 interface DocumentGeneratorProps {
   dossiers: HousingDossier[];
@@ -75,7 +76,16 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     { id: 'fiche_bareme', label: 'بطاقة المعلومات وشبكة التنقيط', sub: 'Fiche & Barème' },
     { id: 'recepisse', label: 'وصل إيداع الملف بالمديرية (DP)', sub: 'Récépissé de Dépôt' },
     { id: 'bordereau', label: 'جدول الإرسال إلى الأكاديمية (AREF)', sub: 'Bordereau d\'Envoi' },
-    { id: 'pv_possession', label: 'محضر تسلّم السكن ومعاينة الأماكن', sub: 'PV Prise de Possession' }
+    { id: 'pv_possession', label: 'محضر تسلّم السكن ومعاينة الأماكن', sub: 'PV Prise de Possession' },
+    { id: 'official_1', label: 'المطبوع 1: طلب المشاركة في التباري', sub: 'Demande de participation' },
+    { id: 'official_2', label: 'المطبوع 2: محضر لجنة الإسناد', sub: 'PV commission d\'attribution' },
+    { id: 'official_3', label: 'المطبوع 3: التزام (وجوبا/مجانا/قانون)', sub: 'Engagement (obligatoire)' },
+    { id: 'official_4', label: 'المطبوع 4: التزام (المسكنون بالفعل)', sub: 'Engagement (de facto)' },
+    { id: 'official_5', label: 'المطبوع 5: بطاقة معاينة السكن', sub: 'Fiche d\'inspection' },
+    { id: 'official_6', label: 'المطبوع 6: البطاقة رقم 1', sub: 'Fiche n°1 (logement créé)' },
+    { id: 'official_7', label: 'المطبوع 7: البطاقة رقم 2', sub: 'Fiche n°2 (modifications)' },
+    { id: 'official_8', label: 'المطبوع 8: بطاقة إشعار', sub: 'Fiche de notification' },
+    { id: 'official_9', label: 'المطبوع 9: بطاقة مراقبة السكن', sub: 'Fiche de contrôle' }
   ];
 
   return (
@@ -797,6 +807,11 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               </div>
             </div>
           </div>
+        )}
+
+        {/* 7-15. المطبوعات الرسمية التسعة للمذكرة 40 (Official Note 40 forms) */}
+        {activeDocType.startsWith('official_') && (
+          <OfficialFormSheet dossier={activeDossier} dossiers={dossiers} formId={activeDocType} />
         )}
       </div>
 

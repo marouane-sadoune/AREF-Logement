@@ -1,4 +1,4 @@
-﻿import { HousingDossier, DossierStatus } from '../types/housing';
+﻿import { HousingDossier, DossierStatus, EvictionProcedure } from '../types/housing';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/v1';
 
@@ -286,4 +286,37 @@ export async function uploadDossierDocument(
 export function getDossierDocumentUrl(dossierId: string, docKey: string): string {
   const backendKey = SUPPORTING_DOC_KEYS[docKey];
   return `${API_BASE}/assignments/${dossierId}/documents/${backendKey}`;
+}
+
+// ===== مساطر الإفراغ (المحور 4 من المذكرة 40) =====
+// الأجل (deadline_months / deadline_date) يحتسب في الخادم حسب الحالة الموجبة.
+
+export async function fetchEvictions(): Promise<EvictionProcedure[]> {
+  const body = await request('/evictions');
+  return body.data || [];
+}
+
+export async function createEviction(
+  payload: Partial<EvictionProcedure> & { numero_dossier: string; case_type: string; trigger_date: string }
+): Promise<EvictionProcedure> {
+  const body = await request('/evictions', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  return body.data;
+}
+
+export async function updateEviction(
+  id: number,
+  changes: Partial<EvictionProcedure>
+): Promise<EvictionProcedure> {
+  const body = await request(`/evictions/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(changes),
+  });
+  return body.data;
+}
+
+export async function deleteEviction(id: number): Promise<void> {
+  await request(`/evictions/${id}`, { method: 'DELETE' });
 }

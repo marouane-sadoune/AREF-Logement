@@ -172,3 +172,52 @@ export const MOROCCAN_GRADES = [
   'مفتش المصالح المادية والمالية',
   'متصرف تربوي'
 ];
+
+// ===== المحور 4 من المذكرة 40: إفراغ المساكن الإدارية والوظيفية =====
+
+export type EvictionCaseType =
+  | 'cessation_travail'          // الانقطاع عن العمل (أجل شهران)
+  | 'retraite'                   // الإحالة على التقاعد (يمدد إلى تسلم المعاش)
+  | 'fin_mission'                // إنهاء المهام التي من أجلها أسند السكن
+  | 'occupation_non_personnelle' // عدم شغل السكن بصفة شخصية وفعلية (فوري)
+  | 'logement_personnel';        // المسكن بالفعل توفر على مسكن شخصي (أجل سنة)
+
+export type EvictionStatus =
+  | 'notified'     // تم إشعار المعني بالأمر
+  | 'vacated'      // تم الإفراغ
+  | 'refused'      // امتناع عن الإفراغ
+  | 'rent_applied' // فرض سومة كرائية حقيقية
+  | 'disciplinary' // متابعة تأديبية
+  | 'judicial';    // متابعة قضائية
+
+export interface EvictionProcedure {
+  id: number;
+  numero_dossier: string;
+  case_type: EvictionCaseType;
+  trigger_date: string;
+  deadline_months: number;
+  deadline_date: string | null;
+  deadline_extended: boolean;
+  status: EvictionStatus;
+  notice_sent_date?: string | null;
+  vacate_date?: string | null;
+  rent_amount?: number | null;
+  notes?: string | null;
+}
+
+export const EVICTION_CASE_LABELS: Record<EvictionCaseType, string> = {
+  cessation_travail: 'الانقطاع عن العمل (أجل شهران)',
+  retraite: 'الإحالة على التقاعد (يمدد إلى تسلم المعاش)',
+  fin_mission: 'إنهاء المهام التي من أجلها أسند السكن',
+  occupation_non_personnelle: 'عدم شغل السكن بصفة شخصية وفعلية (فوري)',
+  logement_personnel: 'التوفر على مسكن شخصي بنفس المدينة (أجل سنة)',
+};
+
+export const EVICTION_STATUS_LABELS: Record<EvictionStatus, string> = {
+  notified: 'تم الإشعار بالإفراغ',
+  vacated: 'تم الإفراغ',
+  refused: 'امتناع عن الإفراغ',
+  rent_applied: 'فرض سومة كرائية حقيقية',
+  disciplinary: 'متابعة تأديبية',
+  judicial: 'متابعة قضائية',
+};

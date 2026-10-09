@@ -10,6 +10,7 @@ import {
   Users,
   Archive,
   Scale,
+  DoorOpen,
   ChevronDown,
   ChevronUp,
   Globe2,
@@ -21,7 +22,7 @@ import {
 import { HousingDossier } from '../types/housing';
 import { useAuth } from '../context/AuthContext';
 
-export type ActiveTab = 'dossiers' | 'new_dossier' | 'documents' | 'audit' | 'regulations' | 'database' | 'users' | 'archive' | 'compare';
+export type ActiveTab = 'dossiers' | 'new_dossier' | 'documents' | 'audit' | 'regulations' | 'database' | 'users' | 'archive' | 'compare' | 'eviction';
 
 interface SidebarProps {
   activeTab: ActiveTab;
@@ -101,6 +102,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       sublabel: currentUser.role === 'aref_validator' ? 'التدقيق الجهوي (AREF)' : 'Circuit & Décisions',
       icon: GitFork,
       badge: underReviewCount > 0 ? underReviewCount : undefined
+    },
+    {
+      id: 'eviction' as ActiveTab,
+      label: 'إفراغ المساكن (المحور 4)',
+      sublabel: 'Procédures d\'évacuation',
+      icon: DoorOpen
     },
     ...(permissions.canManageUsers ? [{
       id: 'users' as ActiveTab,

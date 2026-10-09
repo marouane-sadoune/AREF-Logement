@@ -42,4 +42,10 @@ class DemandeLogement extends Model
         return $this->hasMany(AuditHistorique::class, 'numero_dossier', 'numero_dossier')
             ->orderBy('id');
     }
+
+    public function evictions(): HasMany
+    {
+        return $this->hasMany(EvictionProcedure::class, 'numero_dossier', 'numero_dossier')
+            ->orderByDesc('id');
+    }
 }
