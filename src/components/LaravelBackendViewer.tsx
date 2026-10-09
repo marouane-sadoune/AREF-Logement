@@ -245,37 +245,71 @@ use App\\Models\\Employee;
 class Note40ScoreCalculator
 {
     /**
-     * احتساب مجموع النقط وفق المعايير الرسمية للمذكرة الوزارية رقم 40
+     * احتساب مجموع النقط وفق المعايير السبعة الرسمية للمذكرة الوزارية رقم 40
      */
-    public function calculate(Employee $employee, int $seniorityInEtablissementYears = 0): array
+    public function calculate(Employee $employee): array
     {
-        // 1. الأقدمية العامة (نقطتان عن كل سنة)
-        $yearsGeneral = $employee->recruitment_date ? now()->diffInYears($employee->recruitment_date) : 5;
-        $seniorityGeneralPoints = $yearsGeneral * 2;
+        // 1. الإطار (حسب السلم الإداري)
+        $echelle = (int) $employee->echelle;
+        $scalePoints = ($echelle >= 12 || $echelle === 99) ? 3 : ($echelle === 11 ? 2 : 1);
 
-        // 2. الأقدمية بالمؤسسة (نقطة واحدة عن كل سنة)
-        $seniorityEtablissementPoints = $seniorityInEtablissementYears * 1;
-
-        // 3. الوضعية العائلية والأبناء
-        $maritalPoints = $employee->marital_status === 'marie' ? 3 : 0;
-        $childrenPoints = min($employee->children_count * 2, 12);
-        $familyPoints = $maritalPoints + $childrenPoints;
-
-        // 4. الإطار والمهام الإدارية
-        $gradePoints = match (strtolower($employee->current_job)) {
-            'مدير ثانوية تأهيلية', 'مدير ثانوية إعدادية', 'مدير مدرسة ابتدائية' => 20,
-            'ناظر دروس', 'حارس عام للخارجية', 'حارس عام للداخلية' => 15,
-            'مسير المصالح المادية والمالية' => 10,
-            default => 5,
+        // 2. الأقدمية العامة (خمسة أشطر)
+        $yearsGeneral = (int) $employee->anciennete_generale;
+        $seniorityGeneralPoints = match (true) {
+            $yearsGeneral >= 21 => 5,
+            $yearsGeneral >= 16 => 4,
+            $yearsGeneral >= 11 => 3,
+            $yearsGeneral >= 6  => 2,
+            $yearsGeneral >= 1  => 1,
+            default => 0,
         };
 
-        $totalScore = $seniorityGeneralPoints + $seniorityEtablissementPoints + $familyPoints + $gradePoints;
+        // 3. الأقدمية بنفس المدينة (شطران)
+        $yearsLocal = (int) $employee->anciennete_etablissement;
+        $localityPoints = $yearsLocal >= 6 ? 2 : ($yearsLocal >= 2 ? 1 : 0);
 
+        // 4. التحملات العائلية (نقطة عن كل طفل في حدود 3 + نقطتان عن الزوج غير العامل)
+        $childrenPoints = min((int) $employee->children_count, 3);
+        $spousePoints = ($employee->marital_status === 'marie' && !$employee->conjoint_fonctionnaire) ? 2 : 0;
+
+        // 5. المسؤولية (رئيس قسم = 3، رئيس مصلحة = 2)
+        $responsibilityPoints = match ($employee->current_job) {
+            'مدير ثانوية تأهيلية', 'مدير ثانوية إعدادية', 'مدير مدرسة ابتدائية' => 3,
+            'ناظر الدروس', 'رئيس أشغال', 'حارس عام للخارجية', 'حارس عام للداخلية',
+            'مسير المصالح المادية والمالية (مقتصد)', 'متصرف تربوي' => 2,
+            default => 0,
+        };
+
+        // 6. المردودية (جيد جدا = 3، جيد = 2، مستحسن = 1، دون المستحسن = 0)
+        $performancePoints = match ($employee->merdoudia) {
+            'excellent' => 3,
+            'good' => 2,
+            'satisfactory' => 1,
+            default => 0,
+        };
+
+        // 7. الوسط القروي (معلمة غير متزوجة = 3، مدرس بفرعية = 2)
+        $ruralPoints = 0;
+        if ($employee->milieu_rural && $employee->genre === 'female' && $employee->marital_status === 'celibataire') {
+            $ruralPoints = 3;
+        } elseif ($employee->franchise_rurale) {
+            $ruralPoints = 2;
+        }
+
+        $totalScore = $scalePoints + $seniorityGeneralPoints + $localityPoints
+            + $childrenPoints + $spousePoints + $responsibilityPoints
+            + $performancePoints + $ruralPoints;
+
+        // عند التعادل: تُرجَّح الأقدمية العامة، ثم يُلجأ إلى القرعة.
         return [
-            'seniority_general_points' => $seniorityGeneralPoints,
-            'seniority_etablissement_points' => $seniorityEtablissementPoints,
-            'family_points' => $familyPoints,
-            'grade_points' => $gradePoints,
+            'pts_echelle' => $scalePoints,
+            'pts_anciennete_generale' => $seniorityGeneralPoints,
+            'pts_anciennete_etablissement' => $localityPoints,
+            'pts_enfants' => $childrenPoints,
+            'pts_situation_familiale' => $spousePoints,
+            'bonus_responsabilite' => $responsibilityPoints,
+            'pts_merdoudia' => $performancePoints,
+            'pts_milieu_rural' => $ruralPoints,
             'total_score' => $totalScore,
         ];
     }

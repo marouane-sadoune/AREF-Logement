@@ -16,6 +16,7 @@ import {
   X
 } from 'lucide-react';
 import { HousingDossier } from '../types/housing';
+import { PERFORMANCE_RATING_LABELS } from '../types/housing';
 import { ArefOfficialHeader } from './ArefOfficialHeader';
 import { OfficialFormSheet } from './OfficialFormSheets';
 
@@ -490,45 +491,55 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="border border-slate-300 p-2 text-right font-medium">الأقدمية العامة في قطاع التعليم</td>
-                    <td className="border border-slate-300 p-2 text-[11px]">1 نقطة عن كل سنة خدمة</td>
-                    <td className="border border-slate-300 p-2 font-mono">{candidate.seniorityGeneral} سنة</td>
-                    <td className="border border-slate-300 p-2 font-bold font-mono">{bareme.seniorityGeneralPts}</td>
-                  </tr>
-                  <tr>
-                    <td className="border border-slate-300 p-2 text-right font-medium">الأقدمية في المؤسسة الحالية</td>
-                    <td className="border border-slate-300 p-2 text-[11px]">2 نقط عن كل سنة خدمة</td>
-                    <td className="border border-slate-300 p-2 font-mono">{candidate.seniorityEtablissement} سنوات</td>
-                    <td className="border border-slate-300 p-2 font-bold font-mono">{bareme.seniorityEtablissementPts}</td>
-                  </tr>
-                  <tr>
-                    <td className="border border-slate-300 p-2 text-right font-medium">السلم الإداري للموظف</td>
-                    <td className="border border-slate-300 p-2 text-[11px]">خارج السلم (12) / سلم 11 (10) / سلم 10 (8)</td>
+                    <td className="border border-slate-300 p-2 text-right font-medium">1. الإطار (السلم الإداري)</td>
+                    <td className="border border-slate-300 p-2 text-[11px]">سلم 10 فأقل (1) / سلم 11 (2) / سلم 12 وخارج السلم (3)</td>
                     <td className="border border-slate-300 p-2 font-mono">السلم {candidate.scale}</td>
                     <td className="border border-slate-300 p-2 font-bold font-mono">{bareme.scalePts}</td>
                   </tr>
                   <tr>
-                    <td className="border border-slate-300 p-2 text-right font-medium">الوضعية العائلية</td>
-                    <td className="border border-slate-300 p-2 text-[11px]">متزوج (4) / مطلق أو أرمل بأطفال (4) / عازب (1)</td>
-                    <td className="border border-slate-300 p-2">{family.maritalStatus}</td>
-                    <td className="border border-slate-300 p-2 font-bold font-mono">{bareme.maritalPts}</td>
+                    <td className="border border-slate-300 p-2 text-right font-medium">2. الأقدمية العامة</td>
+                    <td className="border border-slate-300 p-2 text-[11px]">5 أشطر: 1-5 (1) · 6-10 (2) · 11-15 (3) · 16-20 (4) · +20 (5)</td>
+                    <td className="border border-slate-300 p-2 font-mono">{candidate.seniorityGeneral} سنة</td>
+                    <td className="border border-slate-300 p-2 font-bold font-mono">{bareme.seniorityGeneralPts}</td>
                   </tr>
                   <tr>
-                    <td className="border border-slate-300 p-2 text-right font-medium">الأطفال المعالون تحت الحضانة</td>
-                    <td className="border border-slate-300 p-2 text-[11px]">2 نقط عن كل طفل (أقصاه 4 أطفال = 8 نقط)</td>
+                    <td className="border border-slate-300 p-2 text-right font-medium">3. الأقدمية بنفس المدينة</td>
+                    <td className="border border-slate-300 p-2 text-[11px]">من 2 إلى 5 سنوات (1) / 6 سنوات فأكثر (2)</td>
+                    <td className="border border-slate-300 p-2 font-mono">{candidate.seniorityEtablissement} سنوات</td>
+                    <td className="border border-slate-300 p-2 font-bold font-mono">{bareme.seniorityEtablissementPts}</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-slate-300 p-2 text-right font-medium">4. التحملات العائلية - الأبناء</td>
+                    <td className="border border-slate-300 p-2 text-[11px]">نقطة عن كل طفل في حدود 3 أطفال</td>
                     <td className="border border-slate-300 p-2 font-mono">{family.childrenCount} أطفال</td>
                     <td className="border border-slate-300 p-2 font-bold font-mono">{bareme.childrenPts}</td>
                   </tr>
-                  {housing.housingType === 'fonction' && (
-                    <tr className="bg-amber-50/50">
-                      <td className="border border-slate-300 p-2 text-right font-medium">امتياز المهمة الإدارية (سكن وظيفي)</td>
-                      <td className="border border-slate-300 p-2 text-[11px]">أسبقية بحكم الوظيفة وضرورة المصلحة</td>
-                      <td className="border border-slate-300 p-2">{candidate.grade}</td>
-                      <td className="border border-slate-300 p-2 font-bold font-mono text-emerald-700">+{bareme.responsibilityBonus}</td>
-                    </tr>
-                  )}
+                  <tr>
+                    <td className="border border-slate-300 p-2 text-right font-medium">4. التحملات العائلية - الزوج(ة) غير العامل(ة)</td>
+                    <td className="border border-slate-300 p-2 text-[11px]">نقطتان عن الزوج(ة) غير العامل(ة)</td>
+                    <td className="border border-slate-300 p-2">{family.maritalStatus === 'marie' ? (family.spouseIsPublicOfficial ? 'زوج(ة) عامل(ة)' : 'زوج(ة) غير عامل(ة)') : family.maritalStatus}</td>
+                    <td className="border border-slate-300 p-2 font-bold font-mono">{bareme.maritalPts}</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-slate-300 p-2 text-right font-medium">5. المسؤولية الإدارية</td>
+                    <td className="border border-slate-300 p-2 text-[11px]">رئيس قسم / مؤسسة (3) · رئيس مصلحة (2)</td>
+                    <td className="border border-slate-300 p-2">{candidate.grade}</td>
+                    <td className="border border-slate-300 p-2 font-bold font-mono">{bareme.responsibilityBonus}</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-slate-300 p-2 text-right font-medium">6. المردودية</td>
+                    <td className="border border-slate-300 p-2 text-[11px]">جيد جدا (3) · جيد (2) · مستحسن (1) · دون المستحسن (0)</td>
+                    <td className="border border-slate-300 p-2">{PERFORMANCE_RATING_LABELS[candidate.performanceRating ?? 'satisfactory']}</td>
+                    <td className="border border-slate-300 p-2 font-bold font-mono">{bareme.performancePts ?? 0}</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-slate-300 p-2 text-right font-medium">7. الوسط القروي</td>
+                    <td className="border border-slate-300 p-2 text-[11px]">معلمة غير متزوجة (3) · مدرس بفرعية (2)</td>
+                    <td className="border border-slate-300 p-2">{candidate.isRuralBranch ? 'مدرس بفرعية' : candidate.isRuralArea ? 'وسط قروي' : '—'}</td>
+                    <td className="border border-slate-300 p-2 font-bold font-mono">{bareme.ruralBonusPts ?? 0}</td>
+                  </tr>
                   <tr className="bg-slate-200 font-bold">
-                    <td colSpan={3} className="border border-slate-300 p-2 text-right">المجموع الإجمالي للنقط (Total du Barème)</td>
+                    <td colSpan={3} className="border border-slate-300 p-2 text-right">المجموع الإجمالي للنقط (Total du Barème) — التعادل: الأقدمية العامة ثم القرعة</td>
                     <td className="border border-slate-300 p-2 font-mono text-base text-emerald-900">{bareme.totalPts} نقطة</td>
                   </tr>
                 </tbody>

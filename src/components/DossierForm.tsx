@@ -22,7 +22,9 @@ import {
   RequiredDocumentsChecklist,
   MOROCCAN_AREFS,
   MOROCCAN_DIRECTORATES,
-  MOROCCAN_GRADES
+  MOROCCAN_GRADES,
+  PERFORMANCE_RATING_LABELS,
+  PerformanceRating
 } from '../types/housing';
 import { calculateBareme } from '../utils/bareme';
 import { useAuth } from '../context/AuthContext';
@@ -944,48 +946,96 @@ export const DossierForm: React.FC<DossierFormProps> = ({
             </div>
 
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+              {/* Official Note 40 criteria inputs (not auto-derived) */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                    المردودية (المعيار 6)
+                  </label>
+                  <select
+                    value={candidate.performanceRating ?? 'satisfactory'}
+                    onChange={(e) => setCandidate({ ...candidate, performanceRating: e.target.value as PerformanceRating })}
+                    className="w-full py-1.5 px-2.5 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:border-emerald-500"
+                  >
+                    {(Object.keys(PERFORMANCE_RATING_LABELS) as PerformanceRating[]).map((k) => (
+                      <option key={k} value={k}>{PERFORMANCE_RATING_LABELS[k]}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <label className="flex items-center gap-2 pt-5 text-xs text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!candidate.isRuralArea}
+                    onChange={(e) => setCandidate({ ...candidate, isRuralArea: e.target.checked })}
+                    className="w-4 h-4 rounded border-slate-300 text-emerald-600"
+                  />
+                  <span>المؤسسة بالوسط القروي</span>
+                </label>
+
+                <label className="flex items-center gap-2 pt-5 text-xs text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!candidate.isRuralBranch}
+                    onChange={(e) => setCandidate({ ...candidate, isRuralBranch: e.target.checked })}
+                    className="w-4 h-4 rounded border-slate-300 text-emerald-600"
+                  />
+                  <span>مدرس بفرعية (الوسط القروي)</span>
+                </label>
+              </div>
+
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+                <div className="bg-white p-3 rounded-lg border border-slate-200">
+                  <div className="text-[11px] text-slate-500">الإطار (السلم {candidate.scale})</div>
+                  <div className="text-xl font-mono font-bold text-slate-900 mt-1">{bareme.scalePts}</div>
+                  <div className="text-[10px] text-slate-400">1 إلى 3 نقط حسب السلم</div>
+                </div>
+
                 <div className="bg-white p-3 rounded-lg border border-slate-200">
                   <div className="text-[11px] text-slate-500">الأقدمية العامة</div>
                   <div className="text-xl font-mono font-bold text-slate-900 mt-1">{bareme.seniorityGeneralPts}</div>
-                  <div className="text-[10px] text-slate-400">1 نقطة / سنة</div>
+                  <div className="text-[10px] text-slate-400">5 أشطر (1 إلى 5 نقط)</div>
                 </div>
 
                 <div className="bg-white p-3 rounded-lg border border-slate-200">
-                  <div className="text-[11px] text-slate-500">الأقدمية بالمؤسسة</div>
+                  <div className="text-[11px] text-slate-500">الأقدمية بنفس المدينة</div>
                   <div className="text-xl font-mono font-bold text-slate-900 mt-1">{bareme.seniorityEtablissementPts}</div>
-                  <div className="text-[10px] text-slate-400">2 نقط / سنة</div>
+                  <div className="text-[10px] text-slate-400">شطران (1 أو 2 نقط)</div>
                 </div>
 
                 <div className="bg-white p-3 rounded-lg border border-slate-200">
-                  <div className="text-[11px] text-slate-500">السلم الإداري ({candidate.scale})</div>
-                  <div className="text-xl font-mono font-bold text-slate-900 mt-1">{bareme.scalePts}</div>
-                  <div className="text-[10px] text-slate-400">حسب درجة الإطار</div>
-                </div>
-
-                <div className="bg-white p-3 rounded-lg border border-slate-200">
-                  <div className="text-[11px] text-slate-500">الوضع العائلي والأبناء</div>
+                  <div className="text-[11px] text-slate-500">التحملات العائلية</div>
                   <div className="text-xl font-mono font-bold text-slate-900 mt-1">{bareme.maritalPts + bareme.childrenPts}</div>
-                  <div className="text-[10px] text-slate-400">{bareme.maritalPts} زواج + {bareme.childrenPts} أبناء</div>
+                  <div className="text-[10px] text-slate-400">{bareme.childrenPts} أبناء + {bareme.maritalPts} زوج(ة)</div>
+                </div>
+
+                <div className="bg-white p-3 rounded-lg border border-slate-200">
+                  <div className="text-[11px] text-slate-500">المسؤولية</div>
+                  <div className="text-xl font-mono font-bold text-slate-900 mt-1">{bareme.responsibilityBonus}</div>
+                  <div className="text-[10px] text-slate-400">رئيس قسم 3 / مصلحة 2</div>
+                </div>
+
+                <div className="bg-white p-3 rounded-lg border border-slate-200">
+                  <div className="text-[11px] text-slate-500">المردودية</div>
+                  <div className="text-xl font-mono font-bold text-slate-900 mt-1">{bareme.performancePts ?? 0}</div>
+                  <div className="text-[10px] text-slate-400">
+                    {PERFORMANCE_RATING_LABELS[candidate.performanceRating ?? 'satisfactory']}
+                  </div>
+                </div>
+
+                <div className="bg-white p-3 rounded-lg border border-slate-200">
+                  <div className="text-[11px] text-slate-500">الوسط القروي</div>
+                  <div className="text-xl font-mono font-bold text-slate-900 mt-1">{bareme.ruralBonusPts ?? 0}</div>
+                  <div className="text-[10px] text-slate-400">معلمة 3 / فرعية 2</div>
                 </div>
               </div>
-
-              {housingRequest.housingType === 'fonction' && (
-                <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg flex items-center justify-between text-xs text-amber-900">
-                  <div>
-                    <strong>امتياز المسؤولية الإدارية (سكن وظيفي):</strong>{' '}
-                    <span>أسبقية إدارية ملزمة بحكم مزاولة مهام الإدارة التربوية والتدبير المالي</span>
-                  </div>
-                  <div className="text-base font-mono font-bold text-emerald-800">
-                    +{bareme.responsibilityBonus} نقطة
-                  </div>
-                </div>
-              )}
 
               <div className="bg-emerald-900 text-white p-4 rounded-xl flex items-center justify-between">
                 <div>
                   <div className="text-xs text-emerald-200 font-medium">المجموع الإجمالي لنقط الاستحقاق</div>
-                  <div className="text-sm font-bold mt-0.5">الملف جاهز للإحالة على اللجنة المختصة</div>
+                  <div className="text-sm font-bold mt-0.5">
+                    عند التعادل: تُرجَّح الأقدمية العامة ثم يُلجأ إلى القرعة
+                  </div>
                 </div>
                 <div className="text-3xl font-mono font-bold text-emerald-300">
                   {bareme.totalPts} <span className="text-sm font-normal text-emerald-100">نقطة</span>

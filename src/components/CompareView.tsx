@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Building, Trophy, FileCheck } from 'lucide-react';
 import { HousingDossier } from '../types/housing';
+import { compareBareme } from '../utils/bareme';
 
 interface CompareViewProps {
   dossiers: HousingDossier[];
@@ -19,7 +20,7 @@ export const CompareView: React.FC<CompareViewProps> = ({ dossiers }) => {
     // Only establishments with 2+ candidates are interesting for comparison
     return [...map.entries()]
       .filter(([, list]) => list.length >= 2)
-      .map(([etab, list]) => [etab, list.sort((a, b) => b.bareme.totalPts - a.bareme.totalPts)] as [string, HousingDossier[]]);
+      .map(([etab, list]) => [etab, list.sort(compareBareme)] as [string, HousingDossier[]]);
   }, [dossiers]);
 
   const [selectedEtab, setSelectedEtab] = useState<string | null>(groups[0]?.[0] || null);

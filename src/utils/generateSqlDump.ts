@@ -239,8 +239,8 @@ ON DUPLICATE KEY UPDATE \`total_bareme\`=${b.totalPts}, \`statut_dossier\`='${d.
 INSERT INTO \`documents_fournis\` (\`numero_dossier\`, \`demande_manuscrite\`, \`copie_cin\`, \`attestation_travail\`, \`situation_familiale\`, \`engagement_honneur\`, \`pv_installation\`, \`date_verification_dp\`, \`audite_par\`, \`remarques_audit\`)
 VALUES ('${escapeStr(d.referenceNumber)}', ${docs.demandeManuscrite.present ? 1 : 0}, ${docs.copieCIN.present ? 1 : 0}, ${docs.attestationTravail.present ? 1 : 0}, ${docs.situationFamiliale.present ? 1 : 0}, ${docs.engagementHonneur.present ? 1 : 0}, ${docs.pvInstallation.present ? 1 : 0}, ${d.dpAudit?.auditDate ? `'${d.dpAudit.auditDate}'` : 'NULL'}, '${escapeStr(d.dpAudit?.auditedBy)}', '${escapeStr(d.dpAudit?.dpNotes)}');
 
-INSERT INTO \`baremes_detail\` (\`numero_dossier\`, \`pts_anciennete_generale\`, \`pts_anciennete_etablissement\`, \`pts_echelle\`, \`pts_situation_familiale\`, \`pts_enfants\`, \`bonus_responsabilite\`, \`total_points\`)
-VALUES ('${escapeStr(d.referenceNumber)}', ${b.seniorityGeneralPts}, ${b.seniorityEtablissementPts}, ${b.scalePts}, ${b.maritalPts}, ${b.childrenPts}, ${b.responsibilityBonus}, ${b.totalPts})
+INSERT INTO \`baremes_detail\` (\`numero_dossier\`, \`pts_anciennete_generale\`, \`pts_anciennete_etablissement\`, \`pts_echelle\`, \`pts_situation_familiale\`, \`pts_enfants\`, \`bonus_responsabilite\`, \`pts_merdoudia\`, \`pts_milieu_rural\`, \`total_points\`)
+VALUES ('${escapeStr(d.referenceNumber)}', ${b.seniorityGeneralPts}, ${b.seniorityEtablissementPts}, ${b.scalePts}, ${b.maritalPts}, ${b.childrenPts}, ${b.responsibilityBonus}, ${b.performancePts ?? 0}, ${b.ruralBonusPts ?? 0}, ${b.totalPts})
 ON DUPLICATE KEY UPDATE \`total_points\`=${b.totalPts};
 `;
 

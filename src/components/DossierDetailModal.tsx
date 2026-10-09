@@ -15,7 +15,7 @@ import {
   Stamp,
   Award
 } from 'lucide-react';
-import { HousingDossier } from '../types/housing';
+import { HousingDossier, PERFORMANCE_RATING_LABELS } from '../types/housing';
 import { DocumentChecklistView } from './DocumentChecklistView';
 import { StatusTimeline } from './StatusTimeline';
 import { actionTitle } from '../utils/auditLabel';
@@ -224,43 +224,53 @@ export const DossierDetailModal: React.FC<DossierDetailModalProps> = ({
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     <tr>
-                      <td className="p-3 text-right font-medium">الأقدمية العامة في قطاع التعليم</td>
-                      <td className="p-3 text-slate-500">1 نقطة عن كل سنة خدمة</td>
-                      <td className="p-3 font-mono">{candidate.seniorityGeneral} سنة</td>
-                      <td className="p-3 font-mono font-bold text-emerald-800">{bareme.seniorityGeneralPts}</td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 text-right font-medium">الأقدمية في المؤسسة الحالية</td>
-                      <td className="p-3 text-slate-500">2 نقط عن كل سنة خدمة</td>
-                      <td className="p-3 font-mono">{candidate.seniorityEtablissement} سنوات</td>
-                      <td className="p-3 font-mono font-bold text-emerald-800">{bareme.seniorityEtablissementPts}</td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 text-right font-medium">السلم الإداري</td>
-                      <td className="p-3 text-slate-500">خارج السلم (12) / سلم 11 (10) / سلم 10 (8)</td>
+                      <td className="p-3 text-right font-medium">1. الإطار (السلم الإداري)</td>
+                      <td className="p-3 text-slate-500">سلم 10 فأقل (1) · سلم 11 (2) · سلم 12/خارج السلم (3)</td>
                       <td className="p-3 font-mono">السلم {candidate.scale}</td>
                       <td className="p-3 font-mono font-bold text-emerald-800">{bareme.scalePts}</td>
                     </tr>
                     <tr>
-                      <td className="p-3 text-right font-medium">الوضعية العائلية</td>
-                      <td className="p-3 text-slate-500">متزوج (4) / أرمل أو مطلق (4) / عازب (1)</td>
-                      <td className="p-3">{situationFamiliale.maritalStatus}</td>
-                      <td className="p-3 font-mono font-bold text-emerald-800">{bareme.maritalPts}</td>
+                      <td className="p-3 text-right font-medium">2. الأقدمية العامة</td>
+                      <td className="p-3 text-slate-500">5 أشطر: 1-5 (1) · 6-10 (2) · 11-15 (3) · 16-20 (4) · +20 (5)</td>
+                      <td className="p-3 font-mono">{candidate.seniorityGeneral} سنة</td>
+                      <td className="p-3 font-mono font-bold text-emerald-800">{bareme.seniorityGeneralPts}</td>
                     </tr>
                     <tr>
-                      <td className="p-3 text-right font-medium">الأطفال المعالون</td>
-                      <td className="p-3 text-slate-500">2 نقط عن كل طفل معال (بحد أقصى 8 نقط)</td>
+                      <td className="p-3 text-right font-medium">3. الأقدمية بنفس المدينة</td>
+                      <td className="p-3 text-slate-500">من 2 إلى 5 سنوات (1) · 6 سنوات فأكثر (2)</td>
+                      <td className="p-3 font-mono">{candidate.seniorityEtablissement} سنوات</td>
+                      <td className="p-3 font-mono font-bold text-emerald-800">{bareme.seniorityEtablissementPts}</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-right font-medium">4. التحملات العائلية - الأبناء</td>
+                      <td className="p-3 text-slate-500">نقطة عن كل طفل في حدود 3 أطفال</td>
                       <td className="p-3 font-mono">{situationFamiliale.childrenCount} أطفال</td>
                       <td className="p-3 font-mono font-bold text-emerald-800">{bareme.childrenPts}</td>
                     </tr>
-                    {housingRequest.housingType === 'fonction' && (
-                      <tr className="bg-amber-50">
-                        <td className="p-3 text-right font-medium">امتياز السكن الوظيفي وضرورة المصلحة</td>
-                        <td className="p-3 text-slate-500">أسبقية لمسؤولي الإدارة التربوية والمالية</td>
-                        <td className="p-3">{candidate.grade}</td>
-                        <td className="p-3 font-mono font-bold text-emerald-800">+{bareme.responsibilityBonus}</td>
-                      </tr>
-                    )}
+                    <tr>
+                      <td className="p-3 text-right font-medium">4. التحملات العائلية - الزوج(ة)</td>
+                      <td className="p-3 text-slate-500">نقطتان عن الزوج(ة) غير العامل(ة)</td>
+                      <td className="p-3">{situationFamiliale.maritalStatus === 'marie' ? (situationFamiliale.spouseIsPublicOfficial ? 'زوج(ة) عامل(ة)' : 'زوج(ة) غير عامل(ة)') : situationFamiliale.maritalStatus}</td>
+                      <td className="p-3 font-mono font-bold text-emerald-800">{bareme.maritalPts}</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-right font-medium">5. المسؤولية الإدارية</td>
+                      <td className="p-3 text-slate-500">رئيس قسم / مؤسسة (3) · رئيس مصلحة (2)</td>
+                      <td className="p-3">{candidate.grade}</td>
+                      <td className="p-3 font-mono font-bold text-emerald-800">{bareme.responsibilityBonus}</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-right font-medium">6. المردودية</td>
+                      <td className="p-3 text-slate-500">جيد جدا (3) · جيد (2) · مستحسن (1) · دون المستحسن (0)</td>
+                      <td className="p-3">{PERFORMANCE_RATING_LABELS[candidate.performanceRating ?? 'satisfactory']}</td>
+                      <td className="p-3 font-mono font-bold text-emerald-800">{bareme.performancePts ?? 0}</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-right font-medium">7. الوسط القروي</td>
+                      <td className="p-3 text-slate-500">معلمة غير متزوجة (3) · مدرس بفرعية (2)</td>
+                      <td className="p-3">{candidate.isRuralBranch ? 'مدرس بفرعية' : candidate.isRuralArea ? 'وسط قروي' : '—'}</td>
+                      <td className="p-3 font-mono font-bold text-emerald-800">{bareme.ruralBonusPts ?? 0}</td>
+                    </tr>
                   </tbody>
                 </table>
               </div>

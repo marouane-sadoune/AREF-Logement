@@ -1,4 +1,5 @@
 import { HousingDossier } from '../types/housing';
+import { calculateBareme } from '../utils/bareme';
 
 export const INITIAL_DOSSIERS: HousingDossier[] = [
   {
@@ -764,3 +765,14 @@ export const INITIAL_DOSSIERS: HousingDossier[] = [
     }
   }
 ];
+
+// Recompute every demo dossier's barème with the official Note 40 grid so the
+// seeded data never drifts from the live scoring logic.
+for (const dossier of INITIAL_DOSSIERS) {
+  dossier.bareme = calculateBareme(
+    dossier.candidate,
+    dossier.situationFamiliale,
+    dossier.housingRequest
+  );
+}
+
