@@ -9,11 +9,7 @@ import {
   Building, 
   User, 
   Calendar,
-  AlertCircle,
-  Copy,
-  Check,
-  Code,
-  X
+  AlertCircle
 } from 'lucide-react';
 import { HousingDossier } from '../types/housing';
 import { PERFORMANCE_RATING_LABELS } from '../types/housing';
@@ -37,19 +33,11 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   const [activeDocType, setActiveDocType] = useState<string>(
     defaultDocType === 'all' ? 'accord_attribution' : defaultDocType
   );
-  const [copied, setCopied] = useState(false);
-  const [showBladeModal, setShowBladeModal] = useState(false);
 
   const activeDossier = dossiers.find((d) => d.id === selectedId) || dossiers[0];
 
   const handlePrint = () => {
     window.print();
-  };
-
-  const handleCopyText = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   };
 
   if (!activeDossier) {
@@ -105,17 +93,6 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {activeDocType === 'accord_attribution' && (
-              <button
-                onClick={() => setShowBladeModal(true)}
-                className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-                title="عرض ونسخ كود القالب بصيغة Blade HTML لاستخدامه في المشروع"
-              >
-                <Code className="w-4 h-4 text-indigo-600" />
-                <span>كود القالب (Blade HTML)</span>
-              </button>
-            )}
-
             <button
               onClick={handlePrint}
               className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
@@ -826,266 +803,6 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
         )}
       </div>
 
-      {/* Modal: Blade / HTML Code Viewer & Downloader */}
-      {showBladeModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto no-print">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-3xl w-full overflow-hidden flex flex-col max-h-[90vh]" dir="ltr">
-            {/* Header */}
-            <div className="bg-slate-900 text-white p-4 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-indigo-500/20 text-indigo-300 rounded-lg">
-                  <Code className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm">Blade Template (PDF / HTML)</h3>
-                  <p className="text-[11px] text-slate-400">lettre_accord_attribution.blade.php</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    const bladeCode = `<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <style>
-        @page {
-            margin: 20px 40px;
-        }
-        body {
-            font-family: 'amiri', 'DejaVu Sans', sans-serif;
-            direction: rtl;
-            text-align: right;
-            font-size: 15px;
-            line-height: 1.8;
-            color: #000;
-        }
-        
-        /* Style de l'en-tête avec l'image */
-        .header-logo {
-            text-align: center;
-            width: 100%;
-            margin-bottom: 25px;
-        }
-        .header-logo img {
-            width: 85%;
-            height: auto;
-        }
-
-        .recipient {
-            text-align: center;
-            font-weight: bold;
-            font-size: 17px;
-            margin: 20px 0 30px 0;
-            line-height: 1.5;
-        }
-
-        .subject-box {
-            margin: 20px 0;
-            font-size: 15px;
-        }
-        .subject-box p {
-            margin: 4px 0;
-        }
-
-        .content-body {
-            margin-top: 25px;
-            text-align: justify;
-            text-justify: inter-word;
-        }
-
-        .footer {
-            position: absolute;
-            bottom: 15px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            border-top: 1.5px solid #000;
-            padding-top: 6px;
-            font-size: 13px;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-
-    <!-- En-tête avec le Logo Officiel -->
-    <div class="header-logo">
-        <img src="data:image/png;base64,{{ base64_encode(file_get_contents(public_path('images/logo.png'))) }}" alt="En-tête AREF Oriental">
-    </div>
-
-    <!-- Destinataire -->
-    <div class="recipient">
-        مديرة الأكاديمية<br>
-        إلى السيد المدير الإقليمي<br>
-        المديرية الإقليمية - {{ $assignment->employee->directionProvinciale->name_ar }}
-    </div>
-
-    <!-- الموضوع والمراجع -->
-    <div class="subject-box">
-        <p><strong><u>الموضوع:</u></strong> الموافقة على إسناد سكن وظيفي.</p>
-        <p><strong><u>المرجع:</u></strong> إرساليتكم عدد {{ $assignment->incoming_mail_num }} بتاريخ {{ $assignment->incoming_mail_date }}<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;المذكرة الوزارية رقم 40 بتاريخ 10 ماي 2004</p>
-    </div>
-
-    <!-- سلام تام -->
-    <p style="text-align: center; font-weight: bold; margin-top: 20px;">سلام تام بوجود مولانا الإمام</p>
-
-    <!-- نص الرسالة -->
-    <div class="content-body">
-        <p>
-            وبعد، فجوابا على إرساليتكم المشار إليها في المرجع أعلاه، والمتضمنة لطلب السيد 
-            <strong>{{ $assignment->employee->full_name }}</strong> 
-            رقم التأجير <strong>{{ $assignment->employee_ppr }}</strong> 
-            في شأن الموافقة على إسناد السكن الوظيفي المخصص للإدارة التربوية بـ 
-            <strong>{{ $assignment->lodging->address }}</strong> 
-            التابعة للمديرية الإقليمية {{ $assignment->employee->directionProvinciale->name_ar }}، 
-            وتبعا للمذكرة الوزارية المذكورة أعلاه، يشرفني إخباركم أن الأكاديمية توافق على إسناد هذا السكن للمكلف بالأمر بصفته 
-            <strong>{{ $assignment->employee->current_job }}</strong>.
-        </p>
-    </div>
-
-    <p style="text-align: center; font-weight: bold; margin-top: 50px;">وتقبلوا أزكى التحيات والسلام.</p>
-
-    <!-- أسفل الصفحة -->
-    <div class="footer">
-        قسم الشؤون الإدارية والمالية<br>
-        الهاتف: 05-36-50-32-00 &nbsp;&nbsp;-&nbsp;&nbsp; الفاكس: 05-36-68-55-17
-    </div>
-
-</body>
-</html>`;
-                    handleCopyText(bladeCode);
-                  }}
-                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copied ? 'تم النسخ!' : 'نسخ الكود'}</span>
-                </button>
-
-                <button
-                  onClick={() => setShowBladeModal(false)}
-                  className="text-slate-400 hover:text-white p-1 rounded transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Code Body */}
-            <div className="p-4 bg-slate-950 overflow-y-auto flex-1 font-mono text-xs text-emerald-400 leading-relaxed">
-              <pre className="whitespace-pre-wrap selection:bg-indigo-500 selection:text-white">
-{`<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <style>
-        @page {
-            margin: 20px 40px;
-        }
-        body {
-            font-family: 'amiri', 'DejaVu Sans', sans-serif;
-            direction: rtl;
-            text-align: right;
-            font-size: 15px;
-            line-height: 1.8;
-            color: #000;
-        }
-        .header-logo {
-            text-align: center;
-            width: 100%;
-            margin-bottom: 25px;
-        }
-        .header-logo img {
-            width: 85%;
-            height: auto;
-        }
-        .recipient {
-            text-align: center;
-            font-weight: bold;
-            font-size: 17px;
-            margin: 20px 0 30px 0;
-            line-height: 1.5;
-        }
-        .subject-box {
-            margin: 20px 0;
-            font-size: 15px;
-        }
-        .subject-box p {
-            margin: 4px 0;
-        }
-        .content-body {
-            margin-top: 25px;
-            text-align: justify;
-            text-justify: inter-word;
-        }
-        .footer {
-            position: absolute;
-            bottom: 15px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            border-top: 1.5px solid #000;
-            padding-top: 6px;
-            font-size: 13px;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-
-    <!-- En-tête avec le Logo Officiel -->
-    <div class="header-logo">
-        <img src="data:image/png;base64,{{ base64_encode(file_get_contents(public_path('images/logo.png'))) }}" alt="En-tête AREF Oriental">
-    </div>
-
-    <!-- Destinataire -->
-    <div class="recipient">
-        مديرة الأكاديمية<br>
-        إلى السيد المدير الإقليمي<br>
-        المديرية الإقليمية - {{ $assignment->employee->directionProvinciale->name_ar }}
-    </div>
-
-    <!-- الموضوع والمراجع -->
-    <div class="subject-box">
-        <p><strong><u>الموضوع:</u></strong> الموافقة على إسناد سكن وظيفي.</p>
-        <p><strong><u>المرجع:</u></strong> إرساليتكم عدد {{ $assignment->incoming_mail_num }} بتاريخ {{ $assignment->incoming_mail_date }}<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;المذكرة الوزارية رقم 40 بتاريخ 10 ماي 2004</p>
-    </div>
-
-    <!-- سلام تام -->
-    <p style="text-align: center; font-weight: bold; margin-top: 20px;">سلام تام بوجود مولانا الإمام</p>
-
-    <!-- نص الرسالة -->
-    <div class="content-body">
-        <p>
-            وبعد، فجوابا على إرساليتكم المشار إليها في المرجع أعلاه، والمتضمنة لطلب السيد 
-            <strong>{{ $assignment->employee->full_name }}</strong> 
-            رقم التأجير <strong>{{ $assignment->employee_ppr }}</strong> 
-            في شأن الموافقة على إسناد السكن الوظيفي المخصص للإدارة التربوية بـ 
-            <strong>{{ $assignment->lodging->address }}</strong> 
-            التابعة للمديرية الإقليمية {{ $assignment->employee->directionProvinciale->name_ar }}، 
-            وتبعا للمذكرة الوزارية المذكورة أعلاه، يشرفني إخباركم أن الأكاديمية توافق على إسناد هذا السكن للمكلف بالأمر بصفته 
-            <strong>{{ $assignment->employee->current_job }}</strong>.
-        </p>
-    </div>
-
-    <p style="text-align: center; font-weight: bold; margin-top: 50px;">وتقبلوا أزكى التحيات والسلام.</p>
-
-    <!-- أسفل الصفحة -->
-    <div class="footer">
-        قسم الشؤون الإدارية والمالية<br>
-        الهاتف: 05-36-50-32-00 &nbsp;&nbsp;-&nbsp;&nbsp; الفاكس: 05-36-68-55-17
-    </div>
-
-</body>
-</html>`}
-              </pre>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

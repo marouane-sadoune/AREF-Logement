@@ -29,7 +29,7 @@ import {
 } from '../types/housing';
 import { calculateBareme } from '../utils/bareme';
 import { useAuth } from '../context/AuthContext';
-import { getDossierDocumentUrl, fetchLogements } from '../api/client';
+import { getDossierDocumentUrl, fetchLogements, createLogement } from '../api/client';
 import { DocumentPreviewCard, DocumentPreviewCardData } from './DocumentPreviewCard';
 
 interface DossierFormProps {
@@ -125,11 +125,17 @@ export const DossierForm: React.FC<DossierFormProps> = ({
   const [docFiles, setDocFiles] = useState<Record<string, File | undefined>>({});
   const [previewDocData, setPreviewDocData] = useState<DocumentPreviewCardData | null>(null);
   const [availableLogements, setAvailableLogements] = useState<RegistreLogement[]>([]);
-  const [selectedLogementId, setSelectedLogementId] = useState<number | ''>('');
 
   useEffect(() => {
     fetchLogements({ statut: 'vacant' }).then(res => setAvailableLogements(res.data)).catch(() => {});
   }, []);
+
+  // The dossier links itself to the central housing register automatically:
+  // the candidate applies for a dwelling located in their own workplace
+  // (step 1), so the vacant register entry of that établissement is the link.
+  const autoMatchedLogement = availableLogements.find(
+    (l) => l.etablissement.trim() === candidate.currentEtablissement.trim() && l.etablissement.trim() !== ''
+  );
 
   const handleDocFileChange = (key: keyof RequiredDocumentsChecklist, file: File | null) => {
     setDocFiles(prev => ({ ...prev, [key]: file || undefined }));
@@ -239,7 +245,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
     }
   }, [candidate.currentEtablissement, housingRequest.targetEtablissement]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!candidate.fullNameAr.trim() || !candidate.cin.trim() || !candidate.ppr.trim()) {
@@ -275,6 +281,37 @@ export const DossierForm: React.FC<DossierFormProps> = ({
       return;
     }
 
+    // Central register link is automatic: reuse the vacant entry of the
+    // candidate's établissement, or register one on the fly if none exists yet.
+    let registreLogementId: number | null = autoMatchedLogement?.id ?? null;
+    if (!registreLogementId) {
+      const logementPayload = (numero: string): Partial<RegistreLogement> => ({
+        numero_logement: numero,
+        etablissement: candidate.currentEtablissement.trim(),
+        direction_provinciale: candidate.directionProvinciale || '',
+        type_logement: housingRequest.housingType,
+        categorie: housingRequest.housingCategory?.trim() || 'غير محدد',
+        adresse: housingRequest.housingAddress?.trim() || null,
+        statut: 'vacant',
+        etat_batiment: 'bon',
+        observations: 'تمت إضافته تلقائياً عند إيداع ملف الترشيح',
+      });
+      const manualNumero = housingRequest.housingNumber?.trim();
+      try {
+        const created = await createLogement(logementPayload(manualNumero || `AUTO-${Date.now()}`));
+        registreLogementId = created.id;
+      } catch {
+        // A duplicate housing number must not block the dossier: retry once
+        // with a generated unique reference.
+        try {
+          const created = await createLogement(logementPayload(`AUTO-${Date.now()}`));
+          registreLogementId = created.id;
+        } catch {
+          registreLogementId = null;
+        }
+      }
+    }
+
     const newId = initialDossier ? initialDossier.id : `dos-${Date.now()}`;
     const refNum = initialDossier 
       ? initialDossier.referenceNumber 
@@ -290,7 +327,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
       housingRequest,
       documents,
       bareme,
-      registreLogementId: selectedLogementId ? Number(selectedLogementId) : null,
+      registreLogementId,
       auditHistory: initialDossier ? initialDossier.auditHistory : [
         {
           stage: 'creation',
@@ -730,43 +767,17 @@ export const DossierForm: React.FC<DossierFormProps> = ({
               </p>
             </div>
 
-            {/* Registre Logements selector */}
-            {availableLogements.length > 0 && (
-              <div className="bg-indigo-50 border border-indigo-200 p-3 rounded-lg">
-                <label className="block text-[11px] font-semibold text-indigo-800 mb-1">
-                  ربط بالسجل المركزي للمساكن (اختياري)
+            {/* Auto link with the central housing register (by candidate's établissement) */}
+            {autoMatchedLogement && (
+              <div className="p-3 rounded-lg border bg-emerald-50 border-emerald-200">
+                <label className="block text-[11px] font-semibold text-emerald-800 mb-0.5">
+                  الربط التلقائي بالسجل المركزي للمساكن
                 </label>
-                <select
-                  value={selectedLogementId}
-                  onChange={(e) => {
-                    const id = e.target.value ? Number(e.target.value) : '';
-                    setSelectedLogementId(id);
-                    if (id) {
-                      const l = availableLogements.find(x => x.id === id);
-                      if (l) {
-                        setHousingRequest(prev => ({
-                          ...prev,
-                          housingType: l.type_logement,
-                          targetEtablissement: l.etablissement,
-                          housingCategory: l.categorie,
-                          housingAddress: l.adresse || '',
-                          housingNumber: l.numero_logement,
-                        }));
-                      }
-                    }
-                  }}
-                  className="w-full py-1.5 px-2.5 bg-white border border-indigo-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500"
-                >
-                  <option value="">— بدون ربط (إدخال يدوي) —</option>
-                  {availableLogements.map(l => (
-                    <option key={l.id} value={l.id}>
-                      {l.numero_logement} · {l.etablissement} · {l.categorie} ({l.direction_provinciale})
-                    </option>
-                  ))}
-                </select>
-                <span className="text-[10px] text-indigo-600">
-                  اختيار سكن من السجل يملأ تلقائياً الحقول أدناه ويربط الملف بالسجل المركزي.
-                </span>
+                <p className="text-[11px] text-emerald-800">
+                  سيرتبط الملف تلقائياً بالسكن الشاغر <strong>{autoMatchedLogement.numero_logement}</strong>
+                  {' · '}{autoMatchedLogement.categorie} ({autoMatchedLogement.direction_provinciale})
+                  حسب مؤسسة عمل المترشح(ة).
+                </p>
               </div>
             )}
 

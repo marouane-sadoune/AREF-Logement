@@ -359,7 +359,7 @@ export async function createLogement(
     method: 'POST',
     body: JSON.stringify(data),
   });
-  return body.data;
+  return body.data ?? body;
 }
 
 export async function updateLogement(
@@ -370,7 +370,7 @@ export async function updateLogement(
     method: 'PATCH',
     body: JSON.stringify(changes),
   });
-  return body.data;
+  return body.data ?? body;
 }
 
 export async function deleteLogement(id: number): Promise<void> {

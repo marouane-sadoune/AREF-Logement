@@ -134,7 +134,7 @@ export const SignInView: React.FC<SignInViewProps> = ({ onSignIn }) => {
 
               <div className="mt-6 border-t border-slate-100 pt-4 text-center text-[11px] leading-5 text-slate-500">
                 <p>نسخة تجريبية لتصميم الواجهة فقط.</p>
-                <p>كلمة المرور التجريبية للحسابات النشطة: <span dir="ltr" className="font-mono font-semibold text-slate-700">aref2026</span></p>
+                
               </div>
             </div>
 

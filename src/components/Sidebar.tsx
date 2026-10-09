@@ -316,12 +316,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             : <ChevronUp className="h-4 w-4 shrink-0 text-slate-400" />}
         </button>
       </div>
-
-      {/* Footer Info */}
-      <div className="px-4 py-2.5 border-t border-[#e2e6e2] text-[10px] text-slate-500 flex items-center justify-between">
-        <span>نسخة التطبيق: 2.5 (مكتبية)</span>
-        <span className="text-emerald-600 font-semibold">المذكرة 40</span>
-      </div>
     </aside>
   );
 };
