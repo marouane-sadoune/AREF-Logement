@@ -1,10 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   X,
   FileText,
   FileImage,
   File,
-  ExternalLink,
   Download,
   Stamp,
   CheckCircle2,
@@ -14,6 +13,8 @@ import {
   AlertTriangle,
   Eye,
   ZoomIn,
+  ZoomOut,
+  Maximize2,
 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────────────────────
@@ -64,6 +65,12 @@ function FileIcon({ name }: { name?: string }) {
 ───────────────────────────────────────────────────────────── */
 export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
   const backdropRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const dragOrigin = useRef<{ x: number; y: number; sl: number; st: number } | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => { setZoom(1); }, [data.id]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -77,6 +84,40 @@ export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
   }, []);
 
   const isImg = isImageFile(data.fileName);
+  const isPdf = (data.fileName ?? '').toLowerCase().endsWith('.pdf');
+
+  // Plain wheel = zoom (non-passive so the page never scrolls behind the card).
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !isImg) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      setZoom((z) => Math.min(5, Math.max(0.5, +(z + (e.deltaY < 0 ? 0.15 : -0.15)).toFixed(2))));
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [isImg, data.fileUrl]);
+
+  const handleDragStart = (e: React.MouseEvent) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    dragOrigin.current = { x: e.clientX, y: e.clientY, sl: el.scrollLeft, st: el.scrollTop };
+    setIsDragging(true);
+    e.preventDefault();
+  };
+
+  const handleDragMove = (e: React.MouseEvent) => {
+    const el = scrollRef.current;
+    const origin = dragOrigin.current;
+    if (!el || !origin) return;
+    el.scrollLeft = origin.sl - (e.clientX - origin.x);
+    el.scrollTop = origin.st - (e.clientY - origin.y);
+  };
+
+  const handleDragEnd = () => {
+    dragOrigin.current = null;
+    setIsDragging(false);
+  };
 
   return (
     <div
@@ -109,26 +150,89 @@ export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
           border-radius: 20px;
           overflow: hidden;
           width: 100%;
-          max-width: 520px;
-          max-height: 92vh;
+          max-width: 980px;
+          max-height: 94vh;
           box-shadow: 0 32px 80px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.08);
           animation: dpSlideUp 0.22s cubic-bezier(0.34,1.56,0.64,1);
         }
         .dp-media {
           position: relative;
           background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f2027 100%);
-          min-height: 176px;
+          height: 62vh;
           display: flex;
           align-items: center;
           justify-content: center;
           overflow: hidden;
           flex-shrink: 0;
         }
-        .dp-media img {
+        .dp-media-scroll {
           width: 100%;
           height: 100%;
+          overflow: auto;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .dp-media img {
           object-fit: contain;
-          max-height: 240px;
+          display: block;
+        }
+        .dp-media iframe {
+          width: 100%;
+          height: 100%;
+          border: 0;
+          background: #fff;
+        }
+        .dp-zoom-bar {
+          position: absolute;
+          bottom: 12px;
+          left: 12px;
+          display: inline-flex;
+          align-items: center;
+          gap: 2px;
+          padding: 4px;
+          background: rgba(15,23,42,0.75);
+          backdrop-filter: blur(8px);
+          border: 1px solid rgba(255,255,255,0.15);
+          border-radius: 999px;
+        }
+        .dp-zoom-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 30px;
+          height: 30px;
+          border: 0;
+          border-radius: 999px;
+          background: transparent;
+          color: #e2e8f0;
+          cursor: pointer;
+          transition: background 0.12s;
+        }
+        .dp-zoom-btn:hover { background: rgba(255,255,255,0.12); }
+        .dp-zoom-btn:disabled { color: #475569; cursor: not-allowed; }
+        .dp-zoom-level {
+          min-width: 44px;
+          text-align: center;
+          font-size: 11px;
+          font-weight: 700;
+          color: #cbd5e1;
+          font-family: monospace;
+        }
+        .dp-hint-pill {
+          position: absolute;
+          top: 12px;
+          left: 12px;
+          max-width: 60%;
+          font-size: 10.5px;
+          font-weight: 600;
+          color: #cbd5e1;
+          background: rgba(15,23,42,0.65);
+          backdrop-filter: blur(8px);
+          border: 1px solid rgba(255,255,255,0.12);
+          border-radius: 999px;
+          padding: 5px 12px;
+          pointer-events: none;
         }
         .dp-media-placeholder {
           display: flex;
@@ -333,21 +437,74 @@ export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
       {/* ── Card ── */}
       <article className="dp-card">
 
-        {/* ══ SLOT 1 — Media ══ */}
+        {/* ══ SLOT 1 — Media (inline preview with direct zoom) ══ */}
         <div className="dp-media">
           {data.fileUrl && isImg ? (
-            <img src={data.fileUrl} alt={data.titleAr} />
+            <div
+              ref={scrollRef}
+              className="dp-media-scroll"
+              style={{ cursor: isDragging ? 'grabbing' : 'grab', userSelect: 'none' }}
+              onMouseDown={handleDragStart}
+              onMouseMove={handleDragMove}
+              onMouseUp={handleDragEnd}
+              onMouseLeave={handleDragEnd}
+            >
+              <img
+                src={data.fileUrl}
+                alt={data.titleAr}
+                draggable={false}
+                style={{ width: `${zoom * 100}%`, maxWidth: zoom > 1 ? 'none' : '100%', margin: 'auto' }}
+              />
+            </div>
+          ) : data.fileUrl && isPdf ? (
+            <iframe src={data.fileUrl} title={data.titleAr} />
           ) : (
             <div className="dp-media-placeholder">
               <FileIcon name={data.fileName} />
               <span className="dp-file-type-badge">{fileTypeLabel(data.fileName)}</span>
-              {data.fileUrl && !isImg && (
+              {data.fileUrl && (
                 <a href={data.fileUrl} target="_blank" rel="noreferrer" className="dp-open-link">
                   <Eye className="w-4 h-4" />
                   فتح الملف في نافذة جديدة
                 </a>
               )}
             </div>
+          )}
+
+          {/* Zoom controls for images */}
+          {data.fileUrl && isImg && (
+            <>
+              <div className="dp-zoom-bar">
+                <button
+                  className="dp-zoom-btn"
+                  onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.25).toFixed(2)))}
+                  disabled={zoom <= 0.5}
+                  aria-label="تصغير"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <span className="dp-zoom-level">{Math.round(zoom * 100)}%</span>
+                <button
+                  className="dp-zoom-btn"
+                  onClick={() => setZoom((z) => Math.min(5, +(z + 0.25).toFixed(2)))}
+                  disabled={zoom >= 5}
+                  aria-label="تكبير"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+                <button
+                  className="dp-zoom-btn"
+                  onClick={() => setZoom(1)}
+                  disabled={zoom === 1}
+                  aria-label="إعادة الحجم"
+                >
+                  <Maximize2 className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="dp-hint-pill" dir="rtl">
+                عجلة الفأرة: تكبير/تصغير · اسحب الصورة بالزر الأيسر للتحريك في كل الاتجاهات
+              </div>
+            </>
           )}
 
           {/* Status pill overlay */}
@@ -434,26 +591,14 @@ export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
         {/* ══ SLOT 5 — Footer  (margin-top:auto on .dp-footer pushes it down in equal-height grids) ══ */}
         <footer className="dp-footer">
           {data.fileUrl ? (
-            <>
-              <a
-                href={data.fileUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="dp-action dp-action-primary"
-              >
-                <ZoomIn className="w-4 h-4" />
-                معاينة الملف الكامل
-                <ExternalLink className="w-3.5 h-3.5 opacity-70" />
-              </a>
-              <a
-                href={data.fileUrl}
-                download={data.fileName}
-                className="dp-action dp-action-secondary"
-              >
-                <Download className="w-4 h-4" />
-                تحميل
-              </a>
-            </>
+            <a
+              href={data.fileUrl}
+              download={data.fileName}
+              className="dp-action dp-action-primary"
+            >
+              <Download className="w-4 h-4" />
+              تحميل الملف
+            </a>
           ) : (data.files && data.files.length > 0) ? (
             <span className="dp-no-file" style={{ color: '#059669' }}>
               ✓ {data.files.length} وثائق مرفقة — استخدم روابط المعاينة أعلاه
