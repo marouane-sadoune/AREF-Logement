@@ -1,4 +1,4 @@
-﻿import { HousingDossier, DossierStatus, EvictionProcedure } from '../types/housing';
+﻿import { HousingDossier, DossierStatus, EvictionProcedure, RegistreLogement } from '../types/housing';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/v1';
 
@@ -117,6 +117,8 @@ export function mapApiToDossier(api: any): HousingDossier {
       housingStatus: (HOUSING_STATUS_FROM_API[api.statut_logement] || 'vacant') as any,
       reasons: api.reasons || '',
     },
+    registreLogementId: api.registre_logement_id ?? null,
+    logement: api.logement ?? null,
     documents: {
       demandeManuscrite: { present: !!docs.demande_manuscrite, fileName: fileNameFromPath(docs.demande_manuscrite_path) },
       copieCIN: { present: !!docs.copie_cin, fileName: fileNameFromPath(docs.copie_cin_path) },
@@ -203,6 +205,7 @@ function buildCreatePayload(dossier: HousingDossier) {
     },
     type_logement: h.housingType,
     etablissement_cible: h.targetEtablissement,
+    registre_logement_id: dossier.registreLogementId ?? null,
     categorie_logement: h.housingCategory,
     adresse_logement: h.housingAddress,
     numero_logement: h.housingNumber,
@@ -329,4 +332,47 @@ export async function updateEviction(
 
 export async function deleteEviction(id: number): Promise<void> {
   await request(`/evictions/${id}`, { method: 'DELETE' });
+}
+
+// ===== المسجل المركزي للمساكن (Registre des Logements) =====
+
+export async function fetchLogements(params?: {
+  dp?: string;
+  statut?: string;
+  type?: string;
+  q?: string;
+}): Promise<{ data: RegistreLogement[]; total: number }> {
+  const qs = new URLSearchParams();
+  if (params?.dp) qs.set('dp', params.dp);
+  if (params?.statut) qs.set('statut', params.statut);
+  if (params?.type) qs.set('type', params.type);
+  if (params?.q) qs.set('q', params.q);
+  const query = qs.toString();
+  const body = await request(`/logements${query ? `?${query}` : ''}`);
+  return { data: body.data, total: body.total ?? body.data?.length ?? 0 };
+}
+
+export async function createLogement(
+  data: Partial<RegistreLogement>
+): Promise<RegistreLogement> {
+  const body = await request('/logements', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return body.data;
+}
+
+export async function updateLogement(
+  id: number,
+  changes: Partial<RegistreLogement>
+): Promise<RegistreLogement> {
+  const body = await request(`/logements/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(changes),
+  });
+  return body.data;
+}
+
+export async function deleteLogement(id: number): Promise<void> {
+  await request(`/logements/${id}`, { method: 'DELETE' });
 }

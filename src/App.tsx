@@ -19,6 +19,7 @@ import { SignInView } from './components/SignInView';
 import { ArchiveView } from './components/ArchiveView';
 import { CompareView } from './components/CompareView';
 import { EvictionView } from './components/EvictionView';
+import { RegistreLogementsView } from './components/RegistreLogementsView';
 import { isArchivable } from './utils/archive';
 import { HousingDossier, DossierStatus } from './types/housing';
 import { INITIAL_DOSSIERS } from './data/mockDossiers';
@@ -398,6 +399,8 @@ function HousingWorkspace() {
 
             {/* View: Eviction procedures (Note 40 - axis 4) */}
             {activeTab === 'eviction' && <EvictionView dossiers={activeDossiers} />}
+
+            {activeTab === 'registre' && <RegistreLogementsView />}
 
             {/* View: Archive of closed dossiers */}
             {activeTab === 'archive' && (

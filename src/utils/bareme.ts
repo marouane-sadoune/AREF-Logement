@@ -42,9 +42,9 @@ const SERVICE_CHIEF_GRADES = [
 
 function scalePoints(scale: number): number {
   const s = Number(scale) || 0;
-  if (s >= 12 || s === 99) return SCALE_PTS.high; // 99 = خارج السلم
-  if (s === 11) return SCALE_PTS.mid;
-  return SCALE_PTS.low;
+  if (s >= 10 || s === 99) return SCALE_PTS.high; // سلم 10-11 + خارج السلم = 3
+  if (s >= 7) return SCALE_PTS.mid;              // سلم 7-8-9 = 2
+  return SCALE_PTS.low;                           // سلم 1-6 = 1
 }
 
 // 2. الأقدمية العامة: سلّم من 5 أشطر

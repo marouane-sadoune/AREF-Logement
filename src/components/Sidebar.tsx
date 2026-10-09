@@ -22,7 +22,7 @@ import {
 import { HousingDossier } from '../types/housing';
 import { useAuth } from '../context/AuthContext';
 
-export type ActiveTab = 'dossiers' | 'new_dossier' | 'documents' | 'audit' | 'regulations' | 'database' | 'users' | 'archive' | 'compare' | 'eviction';
+export type ActiveTab = 'dossiers' | 'new_dossier' | 'documents' | 'audit' | 'regulations' | 'database' | 'users' | 'archive' | 'compare' | 'eviction' | 'registre';
 
 interface SidebarProps {
   activeTab: ActiveTab;
@@ -109,6 +109,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       sublabel: 'Procédures d\'évacuation',
       icon: DoorOpen
     },
+    {
+      id: 'registre' as ActiveTab,
+      label: 'المسجل المركزي للمساكن',
+      sublabel: 'Registre des Logements (Note 40)',
+      icon: Building2
+    },
     ...(permissions.canManageUsers ? [{
       id: 'users' as ActiveTab,
       label: 'المستخدمون والأدوار الأربعة',
@@ -144,23 +150,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   return (
-    <aside className="w-64 bg-slate-900 text-slate-200 flex flex-col h-full border-l border-slate-800 shrink-0 desktop-sidebar select-none">
+    <aside className="w-64 bg-[#f5f7f5] text-slate-700 flex flex-col h-full border-l border-[#e2e6e2] shrink-0 desktop-sidebar select-none">
       {/* Institutional Moroccan Header - Oriental Region */}
-      <div className="p-4 border-b border-slate-800 bg-slate-950/40">
+      <div className="p-4 border-b border-[#e2e6e2] bg-[#edf0ed]">
         <div className="text-center space-y-1">
           <div className="flex justify-center mb-1">
-            <div className="w-10 h-10 rounded-full bg-emerald-950 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+            <div className="w-10 h-10 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-700">
               <Building2 className="w-5 h-5" />
             </div>
           </div>
-          <h2 className="text-xs font-bold text-slate-100 leading-tight">المملكة المغربية</h2>
-          <p className="text-[11px] text-emerald-400 font-semibold leading-tight">
+          <h2 className="text-xs font-bold text-slate-800 leading-tight">المملكة المغربية</h2>
+          <p className="text-[11px] text-emerald-700 font-semibold leading-tight">
             الأكاديمية الجهوية للتربية والتكوين
           </p>
-          <div className="text-xs text-amber-300 font-bold">
+          <div className="text-xs text-slate-800 font-bold">
             جـهـة الـشـرق (AREF Oriental)
           </div>
-          <div className="text-[10px] text-slate-400 pt-0.5 border-t border-slate-800 mt-1">
+          <div className="text-[10px] text-slate-500 pt-0.5 border-t border-slate-200 mt-1">
             8 مديريات إقليمية (DP) · قسم السكنيات
           </div>
         </div>
@@ -190,20 +196,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => setActiveTab(item.id)}
               className={`w-full flex items-center justify-between p-2.5 rounded-lg text-right transition-colors cursor-pointer ${
                 isActive
-                  ? 'bg-slate-800 text-emerald-400 font-bold border-r-2 border-emerald-400'
-                  : 'text-slate-300 hover:bg-slate-800/60 hover:text-slate-100'
+                  ? 'bg-emerald-50 text-emerald-700 font-bold border-r-2 border-emerald-600'
+                  : 'text-slate-600 hover:bg-[#eaecea] hover:text-slate-800'
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-emerald-400' : 'text-slate-400'}`} />
+                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-emerald-600' : 'text-slate-400'}`} />
                 <div>
                   <div className="text-xs leading-none">{item.label}</div>
-                  <div className="text-[10px] text-slate-400 mt-1">{item.sublabel}</div>
+                  <div className="text-[10px] text-slate-500 mt-1">{item.sublabel}</div>
                 </div>
               </div>
               {item.badge !== undefined && (
                 <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
-                  isActive ? 'bg-emerald-950 text-emerald-300 border border-emerald-700/50' : 'bg-slate-800 text-slate-300'
+                  isActive ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500'
                 }`}>
                   {item.badge}
                 </span>
@@ -290,16 +296,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
           aria-haspopup="menu"
           aria-expanded={isUserMenuOpen}
           aria-controls="sidebar-user-menu"
-          className="flex w-full items-center gap-2.5 rounded-xl border border-slate-700 bg-slate-950/80 p-2.5 text-right transition-colors hover:border-slate-600 hover:bg-slate-800 cursor-pointer"
+          className="flex w-full items-center gap-2.5 rounded-xl border border-[#e2e6e2] bg-[#edf0ed] p-2.5 text-right transition-colors hover:border-[#d0d6d0] hover:bg-[#e4e8e4] cursor-pointer"
         >
-          <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-sm font-bold text-white ring-1 ring-white/15">
+          <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-sm font-bold text-white ring-1 ring-emerald-200">
             <span className="text-[10px]">{avatarLabel}</span>
-            <span className="absolute bottom-0 left-0 h-2.5 w-2.5 rounded-full border-2 border-slate-950 bg-emerald-400" />
+            <span className="absolute bottom-0 left-0 h-2.5 w-2.5 rounded-full border-2 border-[#edf0ed] bg-emerald-400" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[10px] text-slate-400">الحساب المتصل</span>
-            <span className="block truncate text-[11px] font-bold text-slate-100">{currentUser.fullName}</span>
-            <span className="block truncate text-[10px] text-slate-400">
+            <span className="block text-[10px] text-slate-500">الحساب المتصل</span>
+            <span className="block truncate text-[11px] font-bold text-slate-800">{currentUser.fullName}</span>
+            <span className="block truncate text-[10px] text-slate-500">
               {currentUser.role === 'dp_agent'
                 ? `${currentUser.dpCode || 'DP'} · ${currentUser.dpNameAr || currentUser.title}`
                 : currentUser.title}
@@ -312,9 +318,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Footer Info */}
-      <div className="px-4 py-2.5 border-t border-slate-800 text-[10px] text-slate-400 flex items-center justify-between">
+      <div className="px-4 py-2.5 border-t border-[#e2e6e2] text-[10px] text-slate-500 flex items-center justify-between">
         <span>نسخة التطبيق: 2.5 (مكتبية)</span>
-        <span className="text-emerald-500 font-semibold">المذكرة 40</span>
+        <span className="text-emerald-600 font-semibold">المذكرة 40</span>
       </div>
     </aside>
   );

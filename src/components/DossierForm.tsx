@@ -24,11 +24,12 @@ import {
   MOROCCAN_DIRECTORATES,
   MOROCCAN_GRADES,
   PERFORMANCE_RATING_LABELS,
-  PerformanceRating
+  PerformanceRating,
+  RegistreLogement
 } from '../types/housing';
 import { calculateBareme } from '../utils/bareme';
 import { useAuth } from '../context/AuthContext';
-import { getDossierDocumentUrl } from '../api/client';
+import { getDossierDocumentUrl, fetchLogements } from '../api/client';
 import { DocumentPreviewCard, DocumentPreviewCardData } from './DocumentPreviewCard';
 
 interface DossierFormProps {
@@ -123,6 +124,12 @@ export const DossierForm: React.FC<DossierFormProps> = ({
   // them afterwards (view link next to each document).
   const [docFiles, setDocFiles] = useState<Record<string, File | undefined>>({});
   const [previewDocData, setPreviewDocData] = useState<DocumentPreviewCardData | null>(null);
+  const [availableLogements, setAvailableLogements] = useState<RegistreLogement[]>([]);
+  const [selectedLogementId, setSelectedLogementId] = useState<number | ''>('');
+
+  useEffect(() => {
+    fetchLogements({ statut: 'vacant' }).then(res => setAvailableLogements(res.data)).catch(() => {});
+  }, []);
 
   const handleDocFileChange = (key: keyof RequiredDocumentsChecklist, file: File | null) => {
     setDocFiles(prev => ({ ...prev, [key]: file || undefined }));
@@ -283,6 +290,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
       housingRequest,
       documents,
       bareme,
+      registreLogementId: selectedLogementId ? Number(selectedLogementId) : null,
       auditHistory: initialDossier ? initialDossier.auditHistory : [
         {
           stage: 'creation',
@@ -603,7 +611,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
                 <span>{candidate.gender === 'female' ? '2. الوضع العائلي للمترشحة (Situation Familiale) والوثائق المثبتة' : '2. الوضع العائلي للمترشح (Situation Familiale) والوثائق المثبتة'}</span>
               </h3>
               <p className="text-xs text-slate-500 mt-1">
-                حسب المذكرة 40، يمنح المتزوج 4 نقط، ويمنح نقطتان عن كل طفل معال في حدود 4 أطفال.
+                حسب المذكرة 40: أعزب = 0 نقطة، نقطتان عن الزوج(ة) غير العامل(ة)، ونقطة عن كل طفل في حدود 3 أطفال.
               </p>
             </div>
 
@@ -612,13 +620,20 @@ export const DossierForm: React.FC<DossierFormProps> = ({
                 <label className="block font-semibold text-slate-700 mb-1">الحالة العائلية للمترشح(ة)</label>
                 <select
                   value={situationFamiliale.maritalStatus}
-                  onChange={(e) => setSituationFamiliale({ ...situationFamiliale, maritalStatus: e.target.value as any })}
+                  onChange={(e) => {
+                    const ms = e.target.value as any;
+                    setSituationFamiliale({ ...situationFamiliale, maritalStatus: ms });
+                    setDocuments(prev => ({
+                      ...prev,
+                      situationFamiliale: { ...prev.situationFamiliale, present: ms === 'celibataire' ? true : prev.situationFamiliale.present },
+                    }));
+                  }}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 focus:bg-white"
                 >
-                  <option value="marie">متزوج(ة) - 4 نقط</option>
-                  <option value="celibataire">عازب(ة) - 1 نقطة</option>
-                  <option value="divorce">مطلق(ة) بحضانة / بدون حضانة</option>
-                  <option value="veuf">أرمل(ة)</option>
+                  <option value="marie">متزوج(ة) - 2 نقط (زوج غير عامل)</option>
+                  <option value="celibataire">عازب(ة) - 0 نقطة</option>
+                  <option value="divorce">مطلق(ة) - 0 نقطة</option>
+                  <option value="veuf">أرمل(ة) - 0 نقطة</option>
                 </select>
               </div>
 
@@ -632,7 +647,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
                   onChange={(e) => setSituationFamiliale({ ...situationFamiliale, childrenCount: Number(e.target.value) })}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-mono focus:outline-none focus:border-emerald-500 focus:bg-white"
                 />
-                <span className="text-[10px] text-slate-400">نقطتان عن كل طفل (أقصاه 8 نقط)</span>
+                <span className="text-[10px] text-slate-400">نقطة عن كل طفل في حدود 3 أطفال (أقصاه 3 نقط)</span>
               </div>
 
               {situationFamiliale.maritalStatus === 'marie' && (
@@ -714,6 +729,46 @@ export const DossierForm: React.FC<DossierFormProps> = ({
                 تحديد طبيعة السكن طبقاً للمذكرة 40 (وظيفي بحكم ضرورة المهام أم إداري حسب الاستحقاق).
               </p>
             </div>
+
+            {/* Registre Logements selector */}
+            {availableLogements.length > 0 && (
+              <div className="bg-indigo-50 border border-indigo-200 p-3 rounded-lg">
+                <label className="block text-[11px] font-semibold text-indigo-800 mb-1">
+                  ربط بالسجل المركزي للمساكن (اختياري)
+                </label>
+                <select
+                  value={selectedLogementId}
+                  onChange={(e) => {
+                    const id = e.target.value ? Number(e.target.value) : '';
+                    setSelectedLogementId(id);
+                    if (id) {
+                      const l = availableLogements.find(x => x.id === id);
+                      if (l) {
+                        setHousingRequest(prev => ({
+                          ...prev,
+                          housingType: l.type_logement,
+                          targetEtablissement: l.etablissement,
+                          housingCategory: l.categorie,
+                          housingAddress: l.adresse || '',
+                          housingNumber: l.numero_logement,
+                        }));
+                      }
+                    }
+                  }}
+                  className="w-full py-1.5 px-2.5 bg-white border border-indigo-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="">— بدون ربط (إدخال يدوي) —</option>
+                  {availableLogements.map(l => (
+                    <option key={l.id} value={l.id}>
+                      {l.numero_logement} · {l.etablissement} · {l.categorie} ({l.direction_provinciale})
+                    </option>
+                  ))}
+                </select>
+                <span className="text-[10px] text-indigo-600">
+                  اختيار سكن من السجل يملأ تلقائياً الحقول أدناه ويربط الملف بالسجل المركزي.
+                </span>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div>
@@ -797,10 +852,12 @@ export const DossierForm: React.FC<DossierFormProps> = ({
             <div className="border-b border-slate-200 pb-2">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <FileCheck className="w-4 h-4 text-emerald-600" />
-                <span>4. التحقق من الوثائق الست الإلزامية المكونة للملف (Dossier de Demande)</span>
+                <span>4. التحقق من الوثائق {situationFamiliale.maritalStatus === 'celibataire' ? 'الخمس' : 'الست'} الإلزامية المكونة للملف (Dossier de Demande)</span>
               </h3>
               <p className="text-xs text-slate-500 mt-1">
-                هذه الوثائق تدقق بمصلحة الموارد البشرية بالمديرية الإقليمية (DP) قبل الإحالة على الأكاديمية الجهوية (AREF).
+                {situationFamiliale.maritalStatus === 'celibataire'
+                  ? 'المترشح(ة) عازب(ة): لا تُطلب وثائق الوضع العائلي. يكفي 5 وثائق إلزامية.'
+                  : 'هذه الوثائق تدقق بمصلحة الموارد البشرية بالمديرية الإقليمية (DP) قبل الإحالة على الأكاديمية الجهوية (AREF).'}
               </p>
             </div>
 
@@ -838,7 +895,8 @@ export const DossierForm: React.FC<DossierFormProps> = ({
                 {renderDocFileControl('attestationTravail')}
               </div>
 
-              {/* Doc 4 */}
+              {/* Doc 4 — only required for non-célibataire candidates */}
+              {situationFamiliale.maritalStatus !== 'celibataire' && (
               <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs">
                 <div className="min-w-0 space-y-1">
                   <div className="font-bold text-slate-900">4. الوضع العائلي (Situation Familiale)</div>
@@ -906,6 +964,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
                   );
                 })}
               </div>
+              )}
 
               {/* Doc 5 */}
               <div className="grid grid-cols-1 items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs sm:grid-cols-[minmax(0,1fr)_13rem]">
@@ -988,7 +1047,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
                 <div className="bg-white p-3 rounded-lg border border-slate-200">
                   <div className="text-[11px] text-slate-500">الإطار (السلم {candidate.scale})</div>
                   <div className="text-xl font-mono font-bold text-slate-900 mt-1">{bareme.scalePts}</div>
-                  <div className="text-[10px] text-slate-400">1 إلى 3 نقط حسب السلم</div>
+                  <div className="text-[10px] text-slate-400">1-6 (1) · 7-9 (2) · 10+ (3)</div>
                 </div>
 
                 <div className="bg-white p-3 rounded-lg border border-slate-200">

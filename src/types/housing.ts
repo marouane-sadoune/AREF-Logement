@@ -126,6 +126,8 @@ export interface HousingDossier {
   documents: RequiredDocumentsChecklist;
   bareme: BaremePoints;
   auditHistory: AuditHistoryEntry[];
+  registreLogementId?: number | null;
+  logement?: RegistreLogement | null;
   dpAudit?: {
     auditedBy?: string;
     auditDate?: string;
@@ -235,4 +237,44 @@ export const EVICTION_STATUS_LABELS: Record<EvictionStatus, string> = {
   rent_applied: 'فرض سومة كرائية حقيقية',
   disciplinary: 'متابعة تأديبية',
   judicial: 'متابعة قضائية',
+};
+
+// ===== المسجل المركزي للمساكن (Registre des Logements — المذكرة 40) =====
+
+export type LogementStatut = 'vacant' | 'occupe' | 'en_maintenance' | 'reserve' | 'desaffecte';
+export type EtatBatiment = 'bon' | 'moyen' | 'mauvais' | 'ruine';
+
+export interface RegistreLogement {
+  id: number;
+  numero_logement: string;
+  etablissement: string;
+  direction_provinciale: string;
+  type_logement: HousingType;
+  categorie: string;
+  adresse: string | null;
+  nombre_pieces: number;
+  capacite_personnes: number;
+  statut: LogementStatut;
+  occupant_ppr: string | null;
+  date_attribution: string | null;
+  date_liberation: string | null;
+  motif_vacance: string | null;
+  etat_batiment: EtatBatiment;
+  observations: string | null;
+  updated_at?: string;
+}
+
+export const LOGEMENT_STATUT_LABELS: Record<LogementStatut, string> = {
+  vacant: 'شاغر',
+  occupe: 'مشغول',
+  en_maintenance: 'قيد الصيانة',
+  reserve: 'محجوز',
+  desaffecte: 'غير صالح',
+};
+
+export const ETAT_BATIMENT_LABELS: Record<EtatBatiment, string> = {
+  bon: 'جيد',
+  moyen: 'متوسط',
+  mauvais: 'سيئ',
+  ruine: 'آيل للسقوط',
 };

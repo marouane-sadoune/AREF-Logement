@@ -48,4 +48,9 @@ class DemandeLogement extends Model
         return $this->hasMany(EvictionProcedure::class, 'numero_dossier', 'numero_dossier')
             ->orderByDesc('id');
     }
+
+    public function logement(): BelongsTo
+    {
+        return $this->belongsTo(RegistreLogement::class, 'registre_logement_id');
+    }
 }

@@ -492,7 +492,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                 <tbody>
                   <tr>
                     <td className="border border-slate-300 p-2 text-right font-medium">1. الإطار (السلم الإداري)</td>
-                    <td className="border border-slate-300 p-2 text-[11px]">سلم 10 فأقل (1) / سلم 11 (2) / سلم 12 وخارج السلم (3)</td>
+                    <td className="border border-slate-300 p-2 text-[11px]">سلم 1-6 (1) · سلم 7-9 (2) · سلم 10+ وخارج السلم (3)</td>
                     <td className="border border-slate-300 p-2 font-mono">السلم {candidate.scale}</td>
                     <td className="border border-slate-300 p-2 font-bold font-mono">{bareme.scalePts}</td>
                   </tr>

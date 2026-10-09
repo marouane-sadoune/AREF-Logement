@@ -17,7 +17,7 @@ class AssignmentController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = DemandeLogement::with(['candidat', 'bareme', 'documents', 'historique']);
+        $query = DemandeLogement::with(['candidat', 'bareme', 'documents', 'historique', 'logement']);
 
         if ($request->has('status') && $request->status !== 'all') {
             $query->where('statut_dossier', $request->status);
@@ -67,6 +67,7 @@ class AssignmentController extends Controller
 
             'type_logement' => 'required|in:fonction,administratif',
             'etablissement_cible' => 'required|string|max:150',
+            'registre_logement_id' => 'nullable|integer|exists:registre_logements,id',
             'categorie_logement' => 'nullable|string|max:100',
             'adresse_logement' => 'nullable|string',
             'numero_logement' => 'nullable|string|max:50',
@@ -120,6 +121,7 @@ class AssignmentController extends Controller
             $demande = DemandeLogement::create([
                 'numero_dossier' => $numeroDossier,
                 'candidat_ppr' => $candidat->ppr,
+                'registre_logement_id' => $validated['registre_logement_id'] ?? null,
                 'type_logement' => $validated['type_logement'],
                 'etablissement_cible' => $validated['etablissement_cible'],
                 'categorie_logement' => $validated['categorie_logement'] ?? null,

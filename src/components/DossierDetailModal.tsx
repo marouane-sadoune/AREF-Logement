@@ -225,7 +225,7 @@ export const DossierDetailModal: React.FC<DossierDetailModalProps> = ({
                   <tbody className="divide-y divide-slate-100">
                     <tr>
                       <td className="p-3 text-right font-medium">1. الإطار (السلم الإداري)</td>
-                      <td className="p-3 text-slate-500">سلم 10 فأقل (1) · سلم 11 (2) · سلم 12/خارج السلم (3)</td>
+                      <td className="p-3 text-slate-500">سلم 1-6 (1) · سلم 7-9 (2) · سلم 10+/خارج السلم (3)</td>
                       <td className="p-3 font-mono">السلم {candidate.scale}</td>
                       <td className="p-3 font-mono font-bold text-emerald-800">{bareme.scalePts}</td>
                     </tr>

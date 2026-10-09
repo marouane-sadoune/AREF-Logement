@@ -251,7 +251,7 @@ class Note40ScoreCalculator
     {
         // 1. الإطار (حسب السلم الإداري)
         $echelle = (int) $employee->echelle;
-        $scalePoints = ($echelle >= 12 || $echelle === 99) ? 3 : ($echelle === 11 ? 2 : 1);
+        $scalePoints = ($echelle >= 10 || $echelle === 99) ? 3 : ($echelle >= 7 ? 2 : 1);
 
         // 2. الأقدمية العامة (خمسة أشطر)
         $yearsGeneral = (int) $employee->anciennete_generale;

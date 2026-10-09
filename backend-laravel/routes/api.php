@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AssignmentController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\EvictionController;
+use App\Http\Controllers\Api\RegistreLogementController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -32,5 +33,12 @@ Route::prefix('v1')->group(function () {
     Route::post('/evictions', [EvictionController::class, 'store']);
     Route::patch('/evictions/{id}', [EvictionController::class, 'update']);
     Route::delete('/evictions/{id}', [EvictionController::class, 'destroy']);
+
+    // المسجل المركزي للمساكن (Registre des Logements — المذكرة 40)
+    Route::get('/logements', [RegistreLogementController::class, 'index']);
+    Route::post('/logements', [RegistreLogementController::class, 'store']);
+    Route::get('/logements/{id}', [RegistreLogementController::class, 'show']);
+    Route::patch('/logements/{id}', [RegistreLogementController::class, 'update']);
+    Route::delete('/logements/{id}', [RegistreLogementController::class, 'destroy']);
 
 });
