@@ -211,7 +211,9 @@ function HousingWorkspace() {
       prev.map((d) => (d.id === finalDossier.id ? finalDossier : d))
     );
 
-    setAuditDossier(null);
+    // Keep the audit screen open on the refreshed dossier so the agent can
+    // continue (preview docs, next step) without re-entering it.
+    setAuditDossier((prev) => (prev && prev.id === finalDossier.id ? finalDossier : prev));
     if (selectedDossier?.id === finalDossier.id) {
       setSelectedDossier(finalDossier);
     }

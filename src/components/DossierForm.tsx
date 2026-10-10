@@ -44,6 +44,17 @@ const SITUATION_FAMILIALE_SUB_DOCS = [
   { flagKey: 'childrenCertificates', fileKey: 'situationFamilialeEnfants', titleAr: 'ج. بيان عدد الأطفال المعالين', detailAr: 'بيان أو وثائق تثبت عدد الأطفال المعالين (عقود الأزدياد).' },
 ] as const;
 
+const DOC_LABELS_AR: Record<string, string> = {
+  demandeManuscrite: '1. الطلب الخطي (Demande manuscrite)',
+  copieCIN: '2. نسخة من بطاقة التعريف الوطنية (CIN)',
+  attestationTravail: '3. شهادة العمل (Attestation de travail)',
+  situationFamilialeContratMariage: '4-أ. نسخة من عقد الزواج',
+  situationFamilialeAttestationConjoint: '4-ب. شهادة إدارية تثبت وضعية عمل الزوج/الزوجة',
+  situationFamilialeEnfants: '4-ج. بيان عدد الأطفال المعالين',
+  engagementHonneur: '5. مطبوع الالتزام والتصريح بالشرف (Engagement)',
+  pvInstallation: '6. محضر الالتحاق بالمؤسسة (PV d\'installation)',
+};
+
 export const DossierForm: React.FC<DossierFormProps> = ({
   initialDossier,
   onSave,
@@ -175,6 +186,34 @@ export const DossierForm: React.FC<DossierFormProps> = ({
     });
   };
 
+  // Preview card for one document. Situation-familiale sub-docs are passed as
+  // a group (groupKeys) so arrows switch between the 3 sub-files; every other
+  // document previews on its own.
+  const openDocPreview = (clickedKey: string, groupKeys?: string[]) => {
+    if (!initialDossier?.id) return;
+    const dossierId = initialDossier.id;
+    const nameOf = (k: string): string | undefined => {
+      const sub = SITUATION_FAMILIALE_SUB_DOCS.find((s) => s.fileKey === k);
+      if (sub) return ((documents.situationFamiliale as any)[`${sub.flagKey}FileName`] as string | undefined);
+      return (documents[k as keyof RequiredDocumentsChecklist] as { fileName?: string }).fileName;
+    };
+    const files = (groupKeys ?? [])
+      .filter((k) => nameOf(k))
+      .map((k) => ({ key: k, name: DOC_LABELS_AR[k] ?? nameOf(k)!, fileName: nameOf(k), url: getDossierDocumentUrl(dossierId, k) }));
+    const idx = Math.max(0, files.findIndex((e) => e.key === clickedKey));
+    setPreviewDocData({
+      id: clickedKey,
+      titleAr: DOC_LABELS_AR[clickedKey] ?? clickedKey,
+      descAr: '',
+      isPresent: true,
+      legalizationNeeded: false,
+      fileName: nameOf(clickedKey),
+      fileUrl: getDossierDocumentUrl(dossierId, clickedKey),
+      files: files.length > 1 ? files : undefined,
+      initialIndex: idx,
+    });
+  };
+
   // File input + inspect link for one of the 6 mandatory documents.
   // Only dossiers that already have a real backend id (editing an existing
   // dossier) can be inspected immediately; a brand new dossier is not saved
@@ -220,15 +259,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
         {!staged && uploadedName && initialDossier?.id && (
           <button
             type="button"
-            onClick={() => setPreviewDocData({
-              id: key,
-              titleAr: uploadedName,
-              descAr: '',
-              isPresent: true,
-              legalizationNeeded: false,
-              fileName: uploadedName,
-              fileUrl: getDossierDocumentUrl(initialDossier.id, key),
-            })}
+            onClick={() => openDocPreview(key as string)}
             className="flex items-center gap-1 text-[10px] font-semibold text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer"
           >
             <span>&#128270;</span> معاينة الملف
@@ -956,15 +987,7 @@ export const DossierForm: React.FC<DossierFormProps> = ({
                         {!staged && uploadedName && initialDossier?.id && (
                           <button
                             type="button"
-                            onClick={() => setPreviewDocData({
-                              id: sub.fileKey,
-                              titleAr: uploadedName,
-                              descAr: '',
-                              isPresent: true,
-                              legalizationNeeded: false,
-                              fileName: uploadedName,
-                              fileUrl: getDossierDocumentUrl(initialDossier.id, sub.fileKey),
-                            })}
+                            onClick={() => openDocPreview(sub.fileKey, SITUATION_FAMILIALE_SUB_DOCS.map((s) => s.fileKey))}
                             className="flex items-center gap-1 text-[10px] font-semibold text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer"
                           >
                             <span>&#128270;</span> معاينة الملف

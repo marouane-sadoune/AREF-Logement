@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   GitFork, 
   CheckCircle2, 
@@ -52,6 +52,13 @@ export const AuditWorkflowModal: React.FC<AuditWorkflowModalProps> = ({
     currentUser.role === 'aref_director' ? 'approve' : 'dp_audit';
 
   const [activeAction, setActiveAction] = useState<string>(defaultAction);
+
+  // When the dossier progresses (e.g. right after DP validation), advance the
+  // action panel in place instead of leaving the user on the completed step.
+  useEffect(() => {
+    setActiveAction(defaultAction);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dossier.status, dossier.dpAudit?.isComplete, dossier.arefDecision?.commissionDecision]);
   const [comment, setComment] = useState<string>('');
   const [bordereauNum, setBordereauNum] = useState<string>(
     dossier.dpAudit?.bordereauNumber || `BORD/${dossier.candidate.directionProvinciale.slice(0, 3)}/${new Date().getFullYear()}/${Math.floor(100 + Math.random() * 900)}`
@@ -358,10 +365,10 @@ export const AuditWorkflowModal: React.FC<AuditWorkflowModalProps> = ({
                         notes: document.notes,
                         fileUrl: key !== 'situationFamiliale' && document.fileName ? getDossierDocumentUrl(dossier.id, key) : undefined,
                         files: key === 'situationFamiliale' ? [
-                          (document as any).marriageCertFileName && { name: (document as any).marriageCertFileName, url: getDossierDocumentUrl(dossier.id, 'situationFamilialeContratMariage') },
-                          (document as any).spouseAttestationFileName && { name: (document as any).spouseAttestationFileName, url: getDossierDocumentUrl(dossier.id, 'situationFamilialeAttestationConjoint') },
-                          (document as any).childrenCertificatesFileName && { name: (document as any).childrenCertificatesFileName, url: getDossierDocumentUrl(dossier.id, 'situationFamilialeEnfants') },
-                        ].filter(Boolean) as { name: string; url?: string }[] : undefined,
+                          (document as any).marriageCertFileName && { name: 'أ. عقد الزواج', fileName: (document as any).marriageCertFileName, url: getDossierDocumentUrl(dossier.id, 'situationFamilialeContratMariage') },
+                          (document as any).spouseAttestationFileName && { name: 'ب. شهادة عمل الزوج/الزوجة', fileName: (document as any).spouseAttestationFileName, url: getDossierDocumentUrl(dossier.id, 'situationFamilialeAttestationConjoint') },
+                          (document as any).childrenCertificatesFileName && { name: 'ج. بيان عدد الأطفال المعالين', fileName: (document as any).childrenCertificatesFileName, url: getDossierDocumentUrl(dossier.id, 'situationFamilialeEnfants') },
+                        ].filter(Boolean) as { name: string; fileName?: string; url?: string }[] : undefined,
                       });
                     }}
                     className="inline-flex shrink-0 items-center gap-1 rounded px-2 py-1 font-semibold text-blue-700 hover:bg-blue-50 hover:text-blue-900 cursor-pointer"
@@ -384,21 +391,23 @@ export const AuditWorkflowModal: React.FC<AuditWorkflowModalProps> = ({
               {/* DP Agent Actions */}
               {(currentUser.role === 'dp_agent' || currentUser.role === 'dev') && (
                 <>
-                  <button
-                    type="button"
-                    onClick={() => setActiveAction('dp_audit')}
-                    className={`p-3 rounded-lg border text-xs font-semibold text-right transition-colors cursor-pointer ${
-                      activeAction === 'dp_audit'
-                        ? 'bg-amber-50 border-amber-400 text-amber-950'
-                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className="font-bold flex items-center gap-1.5">
-                      <FileCheck className="w-3.5 h-3.5 text-amber-600" />
-                      <span>تدقيق محلي بالمديرية (DP)</span>
-                    </div>
-                    <div className="text-[10px] text-slate-500 mt-1">تأكيد اكتمال الوثائق الـ 6</div>
-                  </button>
+                  {!dossier.dpAudit?.isComplete && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveAction('dp_audit')}
+                      className={`p-3 rounded-lg border text-xs font-semibold text-right transition-colors cursor-pointer ${
+                        activeAction === 'dp_audit'
+                          ? 'bg-amber-50 border-amber-400 text-amber-950'
+                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="font-bold flex items-center gap-1.5">
+                        <FileCheck className="w-3.5 h-3.5 text-amber-600" />
+                        <span>تدقيق محلي بالمديرية (DP)</span>
+                      </div>
+                      <div className="text-[10px] text-slate-500 mt-1">تأكيد اكتمال الوثائق الـ 6</div>
+                    </button>
+                  )}
 
                   <button
                     type="button"

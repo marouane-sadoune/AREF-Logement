@@ -157,7 +157,9 @@ export function mapApiToDossier(api: any): HousingDossier {
     dpAudit: {
       bordereauNumber: api.numero_bordereau_dp || undefined,
       transmissionDate: api.date_transmission_aref ? String(api.date_transmission_aref).slice(0, 10) : undefined,
-      isComplete: Object.values(docs).every(Boolean),
+      // The DP audit is confirmed once the dossier reaches under_review_dp
+      // (or beyond); the backend has no separate audit-completed flag.
+      isComplete: ['under_review_dp', 'transmitted_aref', 'approved'].includes(api.statut_dossier),
     },
     arefDecision: {
       decisionNumber: api.numero_decision_aref || undefined,

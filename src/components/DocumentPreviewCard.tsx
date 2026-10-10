@@ -15,6 +15,8 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize2,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────────────────────
@@ -31,8 +33,11 @@ export interface DocumentPreviewCardData {
   date?: string;
   notes?: string;
   fileUrl?: string;
-  // For composite documents (e.g. الوضع العائلي = 3 sub-documents)
-  files?: { name: string; url?: string }[];
+  // For composite documents (e.g. الوضع العائلي = 3 sub-documents).
+  // `name` is the display label, `fileName` the real stored file (extension
+  // needed for image/PDF detection).
+  files?: { name: string; url?: string; fileName?: string }[];
+  initialIndex?: number;
 }
 
 interface Props {
@@ -64,27 +69,39 @@ function FileIcon({ name }: { name?: string }) {
    Component
 ───────────────────────────────────────────────────────────── */
 export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
-  const backdropRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const dragOrigin = useRef<{ x: number; y: number; sl: number; st: number } | null>(null);
   const [zoom, setZoom] = useState(1);
   const [isDragging, setIsDragging] = useState(false);
+  const [fileIndex, setFileIndex] = useState(0);
+  const [closing, setClosing] = useState(false);
 
-  useEffect(() => { setZoom(1); }, [data.id]);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  useEffect(() => { setZoom(1); setFileIndex(data.initialIndex ?? 0); }, [data.id]);
 
   useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
+    dialogRef.current?.showModal();
   }, []);
 
-  const isImg = isImageFile(data.fileName);
-  const isPdf = (data.fileName ?? '').toLowerCase().endsWith('.pdf');
+  // Reversible exit: play the fade/scale-out first, unmount after it ends.
+  // Escape is handled natively by <dialog> via the cancel event.
+  const requestClose = () => {
+    if (closing) return;
+    setClosing(true);
+    window.setTimeout(onClose, 180);
+  };
+
+  // Composite documents (e.g. الوضع العائلي) carry several files: the viewer
+  // shows them one at a time and the user switches with the arrows or the
+  // buttons next to each file name.
+  const files = data.files ?? [];
+  const safeIndex = Math.min(fileIndex, Math.max(0, files.length - 1));
+  const currentFile = files.length > 0 ? files[safeIndex] : undefined;
+  const previewUrl = currentFile?.url ?? data.fileUrl;
+  const previewName = currentFile?.fileName ?? currentFile?.name ?? data.fileName;
+
+  const isImg = isImageFile(previewName);
+  const isPdf = (previewName ?? '').toLowerCase().endsWith('.pdf');
 
   // Plain wheel = zoom (non-passive so the page never scrolls behind the card).
   useEffect(() => {
@@ -96,7 +113,13 @@ export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
-  }, [isImg, data.fileUrl]);
+  }, [isImg, previewUrl]);
+
+  const goToFile = (next: number) => {
+    if (files.length === 0) return;
+    setFileIndex((next + files.length) % files.length);
+    setZoom(1);
+  };
 
   const handleDragStart = (e: React.MouseEvent) => {
     const el = scrollRef.current;
@@ -120,29 +143,45 @@ export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
   };
 
   return (
-    <div
-      ref={backdropRef}
-      onClick={(e) => e.target === backdropRef.current && onClose()}
-      role="dialog"
-      aria-modal="true"
+    <dialog
+      ref={dialogRef}
+      onCancel={(e) => { e.preventDefault(); requestClose(); }}
+      onClick={(e) => e.target === dialogRef.current && requestClose()}
       aria-label={`معاينة: ${data.titleAr}`}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '1rem',
-        background: 'rgba(2,6,23,0.72)',
-        backdropFilter: 'blur(6px)',
-        WebkitBackdropFilter: 'blur(6px)',
-        animation: 'dpFadeIn 0.18s ease',
-      }}
+      className={`dp-dialog${closing ? ' dp-closing' : ''}`}
     >
       <style>{`
         @keyframes dpFadeIn  { from { opacity:0 } to { opacity:1 } }
-        @keyframes dpSlideUp { from { transform:translateY(24px); opacity:0 } to { transform:translateY(0); opacity:1 } }
+        @keyframes dpFadeOut { from { opacity:1 } to { opacity:0 } }
+        @keyframes dpCardIn  { from { transform: scale(.96); opacity:0 } to { transform: scale(1); opacity:1 } }
+        @keyframes dpCardOut { from { transform: scale(1); opacity:1 } to { transform: scale(.96); opacity:0 } }
+        @keyframes dpFileIn  { from { opacity:0; transform: scale(.99) } to { opacity:1; transform: scale(1) } }
+        .dp-dialog {
+          position: fixed;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          max-width: none;
+          max-height: none;
+          margin: 0;
+          padding: 1rem;
+          border: 0;
+          background: transparent;
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+        }
+        .dp-dialog::backdrop {
+          background: rgba(2,6,23,0.72);
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          animation: dpFadeIn 0.18s ease;
+        }
+        .dp-dialog.dp-closing::backdrop { animation: dpFadeOut 0.18s ease forwards; }
+        .dp-dialog.dp-closing .dp-card { animation: dpCardOut 0.18s ease forwards; }
+        .dp-file-anim { animation: dpFileIn 0.18s ease; height: 100%; }
         .dp-card {
           display: flex;
           flex-direction: column;
@@ -153,7 +192,7 @@ export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
           max-width: 980px;
           max-height: 94vh;
           box-shadow: 0 32px 80px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.08);
-          animation: dpSlideUp 0.22s cubic-bezier(0.34,1.56,0.64,1);
+          animation: dpCardIn 0.22s cubic-bezier(0.34,1.56,0.64,1);
         }
         .dp-media {
           position: relative;
@@ -234,6 +273,40 @@ export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
           padding: 5px 12px;
           pointer-events: none;
         }
+        .dp-nav-btn {
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 38px;
+          height: 38px;
+          border: 1px solid rgba(255,255,255,0.15);
+          border-radius: 999px;
+          background: rgba(15,23,42,0.7);
+          backdrop-filter: blur(8px);
+          color: #e2e8f0;
+          cursor: pointer;
+          transition: background 0.12s;
+          z-index: 2;
+        }
+        .dp-nav-btn:hover { background: rgba(5,150,105,0.85); }
+        .dp-file-counter {
+          position: absolute;
+          bottom: 14px;
+          left: 50%;
+          transform: translateX(-50%);
+          font-size: 11px;
+          font-weight: 700;
+          font-family: monospace;
+          color: #e2e8f0;
+          background: rgba(15,23,42,0.7);
+          border: 1px solid rgba(255,255,255,0.15);
+          border-radius: 999px;
+          padding: 4px 12px;
+          z-index: 2;
+        }
         .dp-media-placeholder {
           display: flex;
           flex-direction: column;
@@ -259,7 +332,7 @@ export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
           gap: 6px;
           margin-top: 4px;
           padding: 7px 16px;
-          background: rgba(99,102,241,0.85);
+          background: rgba(5,150,105,0.85);
           color: #fff;
           border-radius: 10px;
           font-size: 12px;
@@ -267,7 +340,7 @@ export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
           text-decoration: none;
           transition: background 0.15s;
         }
-        .dp-open-link:hover { background: rgba(99,102,241,1); }
+        .dp-open-link:hover { background: rgba(4,120,87,1); }
         .dp-status-pill {
           position: absolute;
           top: 12px;
@@ -407,11 +480,11 @@ export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
           transition: all 0.13s;
         }
         .dp-action-primary {
-          background: linear-gradient(135deg, #6366f1, #4f46e5);
+          background: linear-gradient(135deg, #10b981, #047857);
           color: #fff;
-          box-shadow: 0 2px 8px rgba(99,102,241,0.35);
+          box-shadow: 0 2px 8px rgba(16,185,129,0.35);
         }
-        .dp-action-primary:hover { box-shadow: 0 4px 14px rgba(99,102,241,0.45); transform: translateY(-1px); }
+        .dp-action-primary:hover { box-shadow: 0 4px 14px rgba(16,185,129,0.45); transform: translateY(-1px); }
         .dp-action-secondary {
           background: #fff;
           color: #475569;
@@ -439,10 +512,11 @@ export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
 
         {/* ══ SLOT 1 — Media (inline preview with direct zoom) ══ */}
         <div className="dp-media">
-          {data.fileUrl && isImg ? (
+          {previewUrl && isImg ? (
             <div
+              key={`img-${safeIndex}`}
               ref={scrollRef}
-              className="dp-media-scroll"
+              className="dp-media-scroll dp-file-anim"
               style={{ cursor: isDragging ? 'grabbing' : 'grab', userSelect: 'none' }}
               onMouseDown={handleDragStart}
               onMouseMove={handleDragMove}
@@ -450,20 +524,20 @@ export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
               onMouseLeave={handleDragEnd}
             >
               <img
-                src={data.fileUrl}
-                alt={data.titleAr}
+                src={previewUrl}
+                alt={previewName ?? data.titleAr}
                 draggable={false}
                 style={{ width: `${zoom * 100}%`, maxWidth: zoom > 1 ? 'none' : '100%', margin: 'auto' }}
               />
             </div>
-          ) : data.fileUrl && isPdf ? (
-            <iframe src={data.fileUrl} title={data.titleAr} />
+          ) : previewUrl && isPdf ? (
+            <iframe key={`pdf-${safeIndex}`} className="dp-file-anim" src={previewUrl} title={data.titleAr} />
           ) : (
-            <div className="dp-media-placeholder">
-              <FileIcon name={data.fileName} />
-              <span className="dp-file-type-badge">{fileTypeLabel(data.fileName)}</span>
-              {data.fileUrl && (
-                <a href={data.fileUrl} target="_blank" rel="noreferrer" className="dp-open-link">
+            <div key={`ph-${safeIndex}`} className="dp-media-placeholder dp-file-anim">
+              <FileIcon name={previewName} />
+              <span className="dp-file-type-badge">{fileTypeLabel(previewName)}</span>
+              {previewUrl && (
+                <a href={previewUrl} target="_blank" rel="noreferrer" className="dp-open-link">
                   <Eye className="w-4 h-4" />
                   فتح الملف في نافذة جديدة
                 </a>
@@ -471,8 +545,31 @@ export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
             </div>
           )}
 
+          {/* Arrows to switch between the attached files (RTL: next = left) */}
+          {files.length > 1 && (
+            <>
+              <button
+                className="dp-nav-btn"
+                style={{ right: 12 }}
+                onClick={() => goToFile(safeIndex - 1)}
+                aria-label="الملف السابق"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+              <button
+                className="dp-nav-btn"
+                style={{ left: 12 }}
+                onClick={() => goToFile(safeIndex + 1)}
+                aria-label="الملف التالي"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <span className="dp-file-counter" dir="ltr">{safeIndex + 1} / {files.length}</span>
+            </>
+          )}
+
           {/* Zoom controls for images */}
-          {data.fileUrl && isImg && (
+          {previewUrl && isImg && (
             <>
               <div className="dp-zoom-bar">
                 <button
@@ -507,11 +604,11 @@ export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
             </>
           )}
 
-          {/* Status pill overlay */}
-          <div className={`dp-status-pill ${data.isPresent ? 'present' : 'missing'}`}>
-            {data.isPresent
+          {/* Status pill overlay — reflects the file currently displayed */}
+          <div className={`dp-status-pill ${(files.length > 0 ? !!currentFile?.url : data.isPresent) ? 'present' : 'missing'}`}>
+            {(files.length > 0 ? !!currentFile?.url : data.isPresent)
               ? <><CheckCircle2 className="w-3.5 h-3.5" /> متوفر بالملف</>
-              : <><XCircle className="w-3.5 h-3.5" /> وثيقة ناقصة</>}
+              : <><XCircle className="w-3.5 h-3.5" /> وثيقة لم تُرفق بعد</>}
           </div>
         </div>
 
@@ -519,7 +616,7 @@ export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
         <header className="dp-header">
           <div className="dp-header-row">
             <h2 className="dp-title" dir="rtl">{data.titleAr}</h2>
-            <button className="dp-close" onClick={onClose} aria-label="إغلاق">
+            <button className="dp-close" onClick={requestClose} aria-label="إغلاق">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -569,13 +666,37 @@ export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
           {data.files && data.files.length > 0 && (
             <div className="dp-meta-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 4 }}>
               {data.files.map((f, i) => (
-                <div key={i} className="flex items-center justify-between gap-2">
-                  <span className="dp-meta-value truncate" style={{ fontFamily: 'monospace' }}>📄 {f.name}</span>
-                  {f.url && (
-                    <a href={f.url} target="_blank" rel="noreferrer" className="text-blue-600 font-bold">
-                      معاينة
-                    </a>
-                  )}
+                <div
+                  key={i}
+                  className="flex items-center justify-between gap-2 rounded-lg px-2 py-1"
+                  style={i === safeIndex ? { background: '#ecfdf5', outline: '1px solid #a7f3d0' } : undefined}
+                >
+                  <button
+                    type="button"
+                    onClick={() => goToFile(i)}
+                    className="dp-meta-value truncate text-right cursor-pointer hover:text-emerald-700"
+                    style={{ fontFamily: 'monospace', border: 0, background: 'transparent', fontSize: 11.5 }}
+                    title="عرض هذا الملف في المعاينة"
+                  >
+                    📄 {f.name}
+                  </button>
+                  <span className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => goToFile(i)}
+                      className="text-[10px] font-bold px-2 py-0.5 rounded-md cursor-pointer"
+                      style={i === safeIndex
+                        ? { background: '#059669', color: '#fff' }
+                        : { background: '#e2e8f0', color: '#334155' }}
+                    >
+                      {i === safeIndex ? 'معروض' : 'معاينة'}
+                    </button>
+                    {f.url && (
+                      <a href={f.url} target="_blank" rel="noreferrer" className="text-blue-600 font-bold text-[11px]">
+                        فتح
+                      </a>
+                    )}
+                  </span>
                 </div>
               ))}
             </div>
@@ -590,10 +711,10 @@ export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
 
         {/* ══ SLOT 5 — Footer  (margin-top:auto on .dp-footer pushes it down in equal-height grids) ══ */}
         <footer className="dp-footer">
-          {data.fileUrl ? (
+          {previewUrl ? (
             <a
-              href={data.fileUrl}
-              download={data.fileName}
+              href={previewUrl}
+              download={previewName}
               className="dp-action dp-action-primary"
             >
               <Download className="w-4 h-4" />
@@ -601,7 +722,7 @@ export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
             </a>
           ) : (data.files && data.files.length > 0) ? (
             <span className="dp-no-file" style={{ color: '#059669' }}>
-              ✓ {data.files.length} وثائق مرفقة — استخدم روابط المعاينة أعلاه
+              استخدم الأسهم أو الأزرار للتنقل بين وثائق الملف
             </span>
           ) : (
             <span className="dp-no-file">
@@ -610,13 +731,13 @@ export const DocumentPreviewCard: React.FC<Props> = ({ data, onClose }) => {
             </span>
           )}
 
-          <button onClick={onClose} className="dp-action dp-action-ghost">
+          <button onClick={requestClose} className="dp-action dp-action-ghost">
             <X className="w-4 h-4" />
             إغلاق
           </button>
         </footer>
 
       </article>
-    </div>
+    </dialog>
   );
 };

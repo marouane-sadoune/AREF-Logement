@@ -283,34 +283,28 @@ export const DocumentChecklistView: React.FC<DocumentChecklistViewProps> = ({
                   <div className="flex flex-wrap md:flex-col gap-2 shrink-0">
                     {/* ── معاينة button ── */}
                     <button
-                      onClick={() => setPreviewDoc({
-                        id: doc.id,
-                        titleAr: doc.titleAr,
-                        descAr: doc.descAr,
-                        isPresent,
-                        legalizationNeeded: doc.legalizationNeeded,
-                        isLegalized: ('isLegalized' in doc.data ? (doc.data as any).isLegalized : undefined),
-                        fileName: ('fileName' in doc.data ? doc.data.fileName : undefined),
-                        date: ('date' in doc.data ? doc.data.date : undefined),
-                        notes: ('notes' in doc.data ? doc.data.notes : undefined),
-                        fileUrl: ('fileName' in doc.data && doc.data.fileName)
-                          ? getDossierDocumentUrl(dossier.id, doc.id)
-                          : undefined,
-                        files: doc.id === 'situationFamiliale' ? [
-                          dossier.documents.situationFamiliale.marriageCertFileName && {
-                            name: dossier.documents.situationFamiliale.marriageCertFileName,
-                            url: getDossierDocumentUrl(dossier.id, 'situationFamilialeContratMariage'),
-                          },
-                          dossier.documents.situationFamiliale.spouseAttestationFileName && {
-                            name: dossier.documents.situationFamiliale.spouseAttestationFileName,
-                            url: getDossierDocumentUrl(dossier.id, 'situationFamilialeAttestationConjoint'),
-                          },
-                          dossier.documents.situationFamiliale.childrenCertificatesFileName && {
-                            name: dossier.documents.situationFamiliale.childrenCertificatesFileName,
-                            url: getDossierDocumentUrl(dossier.id, 'situationFamilialeEnfants'),
-                          },
-                        ].filter(Boolean) as { name: string; url?: string }[] : undefined,
-                      })}
+                      onClick={() => {
+                        const sf = dossier.documents.situationFamiliale;
+                        setPreviewDoc({
+                          id: doc.id,
+                          titleAr: doc.titleAr,
+                          descAr: doc.descAr,
+                          isPresent,
+                          legalizationNeeded: doc.legalizationNeeded,
+                          isLegalized: ('isLegalized' in doc.data ? (doc.data as any).isLegalized : undefined),
+                          fileName: ('fileName' in doc.data ? doc.data.fileName : undefined),
+                          date: ('date' in doc.data ? doc.data.date : undefined),
+                          notes: ('notes' in doc.data ? doc.data.notes : undefined),
+                          fileUrl: ('fileName' in doc.data && doc.data.fileName)
+                            ? getDossierDocumentUrl(dossier.id, doc.id)
+                            : undefined,
+                          files: doc.id === 'situationFamiliale' ? [
+                            sf.marriageCertFileName && { name: 'أ. عقد الزواج', fileName: sf.marriageCertFileName, url: getDossierDocumentUrl(dossier.id, 'situationFamilialeContratMariage') },
+                            sf.spouseAttestationFileName && { name: 'ب. شهادة عمل الزوج(ة)', fileName: sf.spouseAttestationFileName, url: getDossierDocumentUrl(dossier.id, 'situationFamilialeAttestationConjoint') },
+                            sf.childrenCertificatesFileName && { name: 'ج. بيان عدد الأطفال المعالين', fileName: sf.childrenCertificatesFileName, url: getDossierDocumentUrl(dossier.id, 'situationFamilialeEnfants') },
+                          ].filter(Boolean) as { name: string; fileName?: string; url?: string }[] : undefined,
+                        });
+                      }}
                       className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <Eye className="w-3.5 h-3.5 text-indigo-600" />
