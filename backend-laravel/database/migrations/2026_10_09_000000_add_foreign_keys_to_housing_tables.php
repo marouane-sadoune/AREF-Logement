@@ -19,6 +19,21 @@ return new class extends Migration
 {
     private function foreignKeyExists(string $table, string $constraint): bool
     {
+        if (DB::getDriverName() === 'pgsql') {
+            $row = DB::selectOne(
+                "SELECT con.conname FROM pg_constraint con
+                 JOIN pg_class rel ON rel.oid = con.conrelid
+                 JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
+                 WHERE nsp.nspname = current_schema()
+                   AND rel.relname = ?
+                   AND con.conname = ?
+                   AND con.contype = 'f'",
+                [$table, $constraint]
+            );
+
+            return $row !== null;
+        }
+
         $row = DB::selectOne(
             'SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS
              WHERE TABLE_SCHEMA = DATABASE()
