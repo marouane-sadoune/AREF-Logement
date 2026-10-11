@@ -235,8 +235,17 @@ function buildCreatePayload(dossier: HousingDossier) {
 }
 
 export async function fetchDossiers(): Promise<HousingDossier[]> {
-  const body = await request('/assignments');
-  return (body.data || []).map(mapApiToDossier);
+  // The API paginates at 15 per page; walk every page so the full register
+  // (including old closed dossiers used by the archive) is loaded.
+  const all: any[] = [];
+  let page = 1;
+  for (;;) {
+    const body = await request(`/assignments?page=${page}`);
+    all.push(...(body.data || []));
+    if (!body.next_page_url) break;
+    page += 1;
+  }
+  return all.map(mapApiToDossier);
 }
 
 export async function fetchDossier(id: string): Promise<HousingDossier> {
